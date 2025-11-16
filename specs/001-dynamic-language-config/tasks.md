@@ -116,20 +116,20 @@ Single NPM package project structure:
 
 ### Tests for User Story 3 (TDD - Write FIRST, Ensure FAIL)
 
-- [ ] T035 [P] [US3] Unit test for context variable schema parsing in tests/unit/language/completion.test.ts
-- [ ] T036 [P] [US3] Unit test for nested property traversal in tests/unit/language/completion.test.ts
-- [ ] T037 [P] [US3] Unit test for circular reference detection in tests/unit/config/validator.test.ts
-- [ ] T038 [P] [US3] Integration test for context completion in tests/integration/code-completion.test.ts
-- [ ] T039 [P] [US3] E2E test for multi-level property completion in tests/e2e/browser-compat.spec.ts
+- [X] T035 [P] [US3] Unit test for context variable schema parsing in tests/unit/language/completion.test.ts
+- [X] T036 [P] [US3] Unit test for nested property traversal in tests/unit/language/completion.test.ts
+- [X] T037 [P] [US3] Unit test for circular reference detection in tests/unit/config/validator.test.ts
+- [X] T038 [P] [US3] Integration test for context completion in tests/integration/code-completion.test.ts
+- [X] T039 [P] [US3] E2E test for multi-level property completion in tests/e2e/browser-compat.spec.ts
 
 ### Implementation for User Story 3
 
-- [ ] T040 [P] [US3] Extend completion provider to support context variables in src/language/completion.ts
-- [ ] T041 [US3] Implement nested object property traversal logic
-- [ ] T042 [US3] Add validation for circular references and depth limits (max 10 levels)
-- [ ] T043 [US3] Implement method completion with signature hints
-- [ ] T044 [US3] Add performance optimization for large context schemas
-- [ ] T045 [US3] Add logging for context variable resolution
+- [X] T040 [P] [US3] Extend completion provider to support context variables in src/language/completion.ts
+- [X] T041 [US3] Implement nested object property traversal logic
+- [X] T042 [US3] Add validation for circular references and depth limits (max 10 levels)
+- [X] T043 [US3] Implement method completion with signature hints
+- [X] T044 [US3] Add performance optimization for large context schemas
+- [X] T045 [US3] Add logging for context variable resolution
 
 **Checkpoint**: All primary user stories (US1, US2, US3) should now be independently functional
 

@@ -137,9 +137,84 @@ describe('Configuration Validator', () => {
     });
 
     it('should detect circular references in context variables', () => {
-      // This test verifies that circular reference detection works
-      // Implementation will be added in User Story 3
-      expect(true).toBe(true); // Placeholder - will be implemented later
+      const configWithCircular: Partial<ConfigurationBundle> = {
+        languageDefinition: {
+          languageId: 'php-script',
+          monarchDefinition: {
+            tokenizer: { root: [] },
+            keywords: [],
+            operators: [],
+            symbols: '',
+            escapes: '',
+          },
+          fileExtensions: ['.phs'],
+          mimeTypes: ['text/x-php-script'],
+          configuration: {},
+        },
+        functionWhitelist: { functions: [], version: '1.0.0' },
+        contextSchema: {
+          variables: [
+            {
+              name: 'user',
+              type: { kind: 'object', baseType: 'User' },
+              properties: [
+                {
+                  name: 'user', // Circular reference
+                  type: { kind: 'object', baseType: 'User' },
+                  documentation: 'Self reference',
+                },
+              ],
+              documentation: 'User object',
+            },
+          ],
+          version: '1.0.0',
+        },
+        bundleVersion: '1.0.0',
+      };
+
+      const result = validateConfigurationBundle(configWithCircular);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some((e) => e.message.includes('Circular'))).toBe(true);
+    });
+
+    it('should enforce depth limits on nested objects', () => {
+      // Create a deeply nested structure beyond the limit
+      const deeplyNested: Partial<ConfigurationBundle> = {
+        languageDefinition: {
+          languageId: 'php-script',
+          monarchDefinition: {
+            tokenizer: { root: [] },
+            keywords: [],
+            operators: [],
+            symbols: '',
+            escapes: '',
+          },
+          fileExtensions: ['.phs'],
+          mimeTypes: ['text/x-php-script'],
+          configuration: {},
+        },
+        functionWhitelist: { functions: [], version: '1.0.0' },
+        contextSchema: {
+          variables: [
+            {
+              name: 'root',
+              type: { kind: 'object', baseType: 'Root' },
+              properties: Array.from({ length: 15 }, (_, i) => ({
+                name: `level${i}`,
+                type: { kind: 'object', baseType: `Level${i}` },
+                documentation: `Level ${i}`,
+              })),
+              documentation: 'Root object',
+            },
+          ],
+          version: '1.0.0',
+        },
+        bundleVersion: '1.0.0',
+      };
+
+      const result = validateConfigurationBundle(deeplyNested);
+      // The validator should warn about deep nesting (max 10 levels)
+      expect(result.errors.some((e) => e.message.includes('depth'))).toBe(true);
     });
   });
 });

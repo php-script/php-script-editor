@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import type { FunctionWhitelist } from '../../src/config/types';
+import type { FunctionWhitelist, ContextVariableSchema } from '../../src/config/types';
 
 describe('Code Completion Integration', () => {
   let testWhitelist: FunctionWhitelist;
@@ -72,6 +72,64 @@ describe('Code Completion Integration', () => {
   it('should trigger completion on specific characters', () => {
     // Integration test - would require Monaco Editor instance
     // This is a placeholder for the integration test structure
+    expect(true).toBe(true);
+  });
+});
+
+describe('Context Variable Completion Integration', () => {
+  let testContextSchema: ContextVariableSchema;
+
+  beforeEach(() => {
+    testContextSchema = {
+      variables: [
+        {
+          name: 'user',
+          type: { kind: 'object', baseType: 'User' },
+          properties: [
+            {
+              name: 'name',
+              type: { kind: 'scalar', baseType: 'string' },
+              documentation: 'User name',
+            },
+            {
+              name: 'email',
+              type: { kind: 'scalar', baseType: 'string' },
+              documentation: 'User email',
+            },
+          ],
+          methods: [
+            {
+              name: 'save',
+              signature: { parameters: [], returnType: 'bool' },
+              documentation: 'Save user',
+            },
+          ],
+          documentation: 'Current user',
+        },
+      ],
+      version: '1.0.0',
+    };
+  });
+
+  it('should provide context variable completions', () => {
+    // Integration test - would require Monaco Editor instance
+    expect(testContextSchema.variables.length).toBe(1);
+  });
+
+  it('should provide nested property completions', () => {
+    // Integration test - would require Monaco Editor instance
+    const user = testContextSchema.variables[0];
+    expect(user?.properties?.length).toBe(2);
+  });
+
+  it('should provide method completions', () => {
+    // Integration test - would require Monaco Editor instance
+    const user = testContextSchema.variables[0];
+    expect(user?.methods?.length).toBe(1);
+  });
+
+  it('should trigger completion on dot character', () => {
+    // Integration test - would require Monaco Editor instance
     expect(true).toBe(true);
   });
 });

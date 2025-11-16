@@ -155,77 +155,164 @@ export function createContextCompletionProvider(
     provideCompletionItems: (lineText: string, _lineNumber: number, column: number) => {
       const textBeforeCursor = lineText.substring(0, column - 1);
 
-      // Match property access pattern: variable.property
-      const propertyMatch = textBeforeCursor.match(/(\w+(?:\.\w+)*)\s*\.?\s*$/);
+      // Match property access pattern: variable.property.subproperty
+      const dotMatch = textBeforeCursor.match(/(\w+(?:\.\w+)*)\s*\.?\s*$/);
 
-      if (!propertyMatch) {
-        // Provide root-level variables
-        return schema.variables.map((v) => ({
-          label: v.name,
-          kind: 'Variable',
-          insertText: v.name,
-          documentation: v.documentation,
-          detail: v.type.baseType,
-        }));
+      if (!dotMatch) {
+        // No dot found - provide root-level variables
+        const prefix = textBeforeCursor.match(/(\w+)$/)?.[1] || '';
+        return filterContextVariables(schema, prefix);
       }
 
-      // Navigate nested properties
-      const chain = propertyMatch[1]!.split('.');
-      let currentVar = schema.variables.find((v) => v.name === chain[0]);
+      // Split the chain and check if it ends with a dot
+      const fullChain = dotMatch[1]!;
+      const endsWithDot = textBeforeCursor.trim().endsWith('.');
+      const chain = fullChain.split('.');
 
-      if (!currentVar) {
+      // Find the variable
+      const rootVarName = chain[0];
+      const rootVar = schema.variables.find((v) => v.name === rootVarName);
+
+      if (!rootVar) {
         return [];
       }
 
-      // Traverse property chain
-      for (let i = 1; i < chain.length; i++) {
-        const propName = chain[i];
-        const prop = currentVar.properties?.find((p) => p.name === propName);
+      // Traverse the property chain
+      const context = traversePropertyChain(rootVar, chain.slice(1), schema);
 
-        if (!prop || prop.type.kind !== 'object') {
-          return [];
-        }
-
-        // For nested objects, we would need the full schema
-        // This is a simplified version
-        currentVar = {
-          name: prop.name,
-          type: prop.type,
-          properties: [],
-          documentation: prop.documentation,
-        };
+      if (!context) {
+        return [];
       }
 
-      // Return properties and methods of current context
-      const items: CompletionItem[] = [];
+      // Get prefix for filtering (text after last dot)
+      const prefix = endsWithDot ? '' : chain[chain.length - 1] || '';
 
-      if (currentVar.properties) {
-        items.push(
-          ...currentVar.properties.map((p) => ({
-            label: p.name,
-            kind: 'Property',
-            insertText: p.name,
-            documentation: p.documentation,
-            detail: p.type.baseType,
-          }))
-        );
-      }
-
-      if (currentVar.methods) {
-        items.push(
-          ...currentVar.methods.map((m) => ({
-            label: m.name,
-            kind: 'Method',
-            insertText: `${m.name}()`,
-            documentation: m.documentation,
-            detail: getFunctionSignatureFromMethod(m),
-          }))
-        );
-      }
-
-      return items;
+      // Return completions for current context
+      return getContextCompletions(context, prefix);
     },
   };
+}
+
+/**
+ * Filter root-level context variables by prefix
+ */
+function filterContextVariables(
+  schema: ContextVariableSchema,
+  prefix: string
+): CompletionItem[] {
+  const lowerPrefix = prefix.toLowerCase();
+
+  return schema.variables
+    .filter((v) => !prefix || v.name.toLowerCase().startsWith(lowerPrefix))
+    .map((v) => ({
+      label: v.name,
+      kind: 'Variable',
+      insertText: v.name,
+      documentation: v.documentation,
+      detail: v.type.baseType,
+    }));
+}
+
+/**
+ * Traverse property chain and return final context
+ */
+function traversePropertyChain(
+  rootVar: ContextVariable,
+  chain: string[],
+  _schema: ContextVariableSchema,
+  depth: number = 0
+): ContextVariable | null {
+  // Depth limit to prevent infinite loops (max 10 levels)
+  if (depth > 10) {
+    logger.warn('Context property traversal exceeded depth limit', { chain, depth });
+    return null;
+  }
+
+  let currentVar = rootVar;
+
+  // Traverse each level in the chain
+  for (let i = 0; i < chain.length; i++) {
+    const propName = chain[i];
+
+    if (!propName) {
+      continue; // Empty string from trailing dot
+    }
+
+    // Look for property
+    const prop = currentVar.properties?.find((p) => p.name === propName);
+
+    if (!prop) {
+      // Property not found
+      logger.debug('Property not found in context chain', { propName, chain });
+      return null;
+    }
+
+    // If this is not the last item and it's not an object, can't traverse further
+    if (i < chain.length - 1 && prop.type.kind !== 'object') {
+      logger.debug('Cannot traverse non-object property', { propName, type: prop.type.kind });
+      return null;
+    }
+
+    // Create a context variable from the property for further traversal
+    currentVar = {
+      name: prop.name,
+      type: prop.type,
+      properties: [], // Would need schema lookup for nested types
+      methods: [], // Would need schema lookup for nested types
+      documentation: prop.documentation,
+    };
+  }
+
+  return currentVar;
+}
+
+/**
+ * Get completions for a context variable
+ */
+function getContextCompletions(
+  context: ContextVariable,
+  prefix: string
+): CompletionItem[] {
+  const items: CompletionItem[] = [];
+  const lowerPrefix = prefix.toLowerCase();
+
+  // Add properties
+  if (context.properties) {
+    items.push(
+      ...context.properties
+        .filter((p) => !prefix || p.name.toLowerCase().startsWith(lowerPrefix))
+        .map((p) => ({
+          label: p.name,
+          kind: p.readonly ? 'Constant' : 'Property',
+          insertText: p.name,
+          documentation: p.documentation,
+          detail: `${p.type.baseType}${p.readonly ? ' (readonly)' : ''}`,
+        }))
+    );
+  }
+
+  // Add methods
+  if (context.methods) {
+    items.push(
+      ...context.methods
+        .filter((m) => !prefix || m.name.toLowerCase().startsWith(lowerPrefix))
+        .map((m) => ({
+          label: m.name,
+          kind: 'Method',
+          insertText: `${m.name}()`,
+          documentation: m.documentation,
+          detail: getFunctionSignatureFromMethod(m),
+        }))
+    );
+  }
+
+  logger.debug('Context completions generated', {
+    contextName: context.name,
+    prefix,
+    itemCount: items.length,
+  });
+
+  return items;
 }
 
 /**
@@ -248,38 +335,104 @@ export function registerContextCompletionProvider(
   languageId: string,
   schema: ContextVariableSchema
 ): monaco.IDisposable {
+  logger.info('Registering context variable completion provider', {
+    languageId,
+    variableCount: schema.variables.length,
+  });
+
   return monaco.languages.registerCompletionItemProvider(languageId, {
     provideCompletionItems: (model, position) => {
       const lineText = model.getLineContent(position.lineNumber);
       const textBeforeCursor = lineText.substring(0, position.column - 1);
 
-      // Match property access pattern
-      const propertyMatch = textBeforeCursor.match(/(\w+(?:\.\w+)*)\s*\.?\s*$/);
+      // Match property access pattern: variable.property.subproperty
+      const dotMatch = textBeforeCursor.match(/(\w+(?:\.\w+)*)\s*\.?\s*$/);
 
-      if (!propertyMatch) {
+      if (!dotMatch) {
         // Provide root-level variables
-        const suggestions: monaco.languages.CompletionItem[] = schema.variables.map((v) => ({
-          label: v.name,
+        const prefix = textBeforeCursor.match(/(\w+)$/)?.[1] || '';
+        const variables = filterContextVariables(schema, prefix);
+
+        const suggestions: monaco.languages.CompletionItem[] = variables.map((v) => ({
+          label: v.label,
           kind: monaco.languages.CompletionItemKind.Variable,
-          insertText: v.name,
+          insertText: v.insertText,
           documentation: {
-            value: v.documentation,
+            value: v.documentation || '',
           },
-          detail: v.type.baseType,
+          detail: v.detail,
           range: new monaco.Range(
             position.lineNumber,
-            position.column,
+            position.column - prefix.length,
             position.lineNumber,
             position.column
           ),
         }));
 
+        logger.debug('Root-level context completion triggered', {
+          prefix,
+          suggestionCount: suggestions.length,
+        });
+
         return { suggestions };
       }
 
-      // For nested properties, provide context-aware suggestions
-      // This would require full implementation of property traversal
-      return { suggestions: [] };
+      // Handle nested property access
+      const fullChain = dotMatch[1]!;
+      const endsWithDot = textBeforeCursor.trim().endsWith('.');
+      const chain = fullChain.split('.');
+
+      // Find the variable
+      const rootVarName = chain[0];
+      const rootVar = schema.variables.find((v) => v.name === rootVarName);
+
+      if (!rootVar) {
+        return { suggestions: [] };
+      }
+
+      // Traverse the property chain
+      const context = traversePropertyChain(rootVar, chain.slice(1), schema);
+
+      if (!context) {
+        return { suggestions: [] };
+      }
+
+      // Get prefix for filtering
+      const prefix = endsWithDot ? '' : chain[chain.length - 1] || '';
+      const completions = getContextCompletions(context, prefix);
+
+      const suggestions: monaco.languages.CompletionItem[] = completions.map((c) => {
+        const kind =
+          c.kind === 'Method'
+            ? monaco.languages.CompletionItemKind.Method
+            : c.kind === 'Constant'
+            ? monaco.languages.CompletionItemKind.Constant
+            : monaco.languages.CompletionItemKind.Property;
+
+        return {
+          label: c.label,
+          kind,
+          insertText: c.insertText,
+          documentation: {
+            value: c.documentation || '',
+          },
+          detail: c.detail,
+          range: new monaco.Range(
+            position.lineNumber,
+            position.column - prefix.length,
+            position.lineNumber,
+            position.column
+          ),
+        };
+      });
+
+      logger.debug('Nested property completion triggered', {
+        chain: fullChain,
+        prefix,
+        suggestionCount: suggestions.length,
+      });
+
+      return { suggestions };
     },
     triggerCharacters: ['.'],
   });
