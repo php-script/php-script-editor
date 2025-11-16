@@ -58,16 +58,36 @@ As a backend developer, I need to configure context variables (e.g., `user`, `re
 
 ---
 
+### User Story 4 - Persist Editor Content Locally (Priority: P2)
+
+As an end user, I need my editor changes to persist across page reloads so that I don't lose work if the browser crashes or I accidentally close the page.
+
+**Why this priority**: Data loss is frustrating and reduces trust in the tool. This feature significantly improves user experience and protects against accidental data loss, though the editor can function without it.
+
+**Independent Test**: Can be tested by typing content in the editor, reloading the page, and verifying the content is restored from localStorage. Can also test the "revert to original" functionality to discard local changes.
+
+**Acceptance Scenarios**:
+
+1. **Given** a user has typed code in the editor, **When** the page is reloaded, **Then** the editor restores the locally saved content from localStorage
+2. **Given** localStorage contains saved content AND server provides initial content, **When** editor loads, **Then** localStorage content takes precedence and is displayed
+3. **Given** a user wants to discard local changes, **When** the "revert to original" API is called, **Then** localStorage is cleared and server-provided content is displayed
+4. **Given** a user types new content, **When** content changes, **Then** the new content is automatically saved to localStorage
+5. **Given** localStorage quota is exceeded, **When** attempting to save, **Then** editor shows warning but continues functioning without persistence
+
+---
+
 ### Edge Cases
 
 - **Malformed configuration**: Editor loads with fallback minimal syntax highlighting (keywords only) and displays persistent error banner with details
-- **Network error / server unreachable**: Editor loads with fallback minimal mode and persistent error banner with retry button - allows basic editing
 - **Empty whitelist**: Code completion shows no function suggestions, validation warns on any function usage
 - **Circular dependencies in context variables**: Configuration validation rejects bundle, falls back to minimal mode with error banner
 - **Very large context structures**: Editor may limit completion suggestions to first N properties (performance constraint), show "more..." indicator
-- **Code written before configuration loads**: Show loading indicator, queue user input, apply syntax highlighting retroactively when loaded
 - **Context variable conflicts with keywords**: Context variable takes precedence in completion, syntax highlighting follows language rules
 - **Invalid context variable types**: Configuration validation flags unknown types, omits invalid variables from completion
+- **localStorage full / quota exceeded**: Warn user, gracefully degrade to non-persistent mode, editor continues functioning
+- **localStorage content corrupt**: Ignore corrupted data, fall back to server-provided initial content, clear corrupted entry
+- **Concurrent edits in multiple tabs**: Each tab maintains own localStorage entry (keyed by editor instance ID or page URL), last write wins
+- **Page reload during unsaved changes**: localStorage content automatically restored, no data loss
 
 ## Requirements *(mandatory)*
 
@@ -82,13 +102,16 @@ As a backend developer, I need to configure context variables (e.g., `user`, `re
 - **FR-007**: System MUST support nested object access in code completion (e.g., `user.logins.count()` with completion at each level)
 - **FR-008**: System MUST validate php-script code against the configured language definition and show syntax errors
 - **FR-009**: System MUST load configuration only on editor instantiation - no automatic reloads during active editing session
-- **FR-010**: System MUST handle configuration errors (malformed, invalid, network failure) gracefully by loading editor with fallback minimal syntax highlighting and displaying persistent error banner with error details
-- **FR-011**: System MUST provide retry mechanism (retry button in error banner) for failed configuration loads due to network errors
-- **FR-012**: System MUST fetch complete configuration bundle from server for each editor instance initialization
-- **FR-013**: System MUST send context parameters (user ID, session token, editing context) when requesting configuration from server to enable user/context-specific configuration
-- **FR-014**: Server MUST provide complete configuration bundles containing all three components (language definition, function whitelist, context schema) - partial updates are not supported
-- **FR-015**: System MUST distinguish between php-script syntax and standard PHP syntax in highlighting
-- **FR-016**: System MUST provide fallback minimal syntax highlighting (keywords only) when configuration is invalid or unavailable
+- **FR-010**: System MUST receive configuration via server-side rendered JavaScript object (embedded in HTML) - no AJAX requests for configuration
+- **FR-011**: Server-side PHP MUST write complete configuration bundle into JavaScript configuration object during page rendering
+- **FR-012**: System MUST handle configuration errors (malformed, invalid) gracefully by loading editor with fallback minimal syntax highlighting and displaying persistent error banner with error details
+- **FR-013**: System MUST persist current editor code value to localStorage on every content change
+- **FR-014**: System MUST load editor with localStorage content on page load if available - localStorage content takes precedence over server-provided initial content
+- **FR-015**: System MUST provide API method to discard localStorage content and revert to server-provided initial content
+- **FR-016**: System MUST NOT cache configuration in localStorage - configuration always comes fresh from server-side rendering
+- **FR-017**: Server MUST provide complete configuration bundles containing all three components (language definition, function whitelist, context schema) - partial updates are not supported
+- **FR-018**: System MUST distinguish between php-script syntax and standard PHP syntax in highlighting
+- **FR-019**: System MUST provide fallback minimal syntax highlighting (keywords only) when configuration is invalid or unavailable
 
 ### Key Entities
 
@@ -117,6 +140,9 @@ As a backend developer, I need to configure context variables (e.g., `user`, `re
 - **SC-006**: Configuration validation catches and reports 95% of common configuration errors (malformed JSON, invalid syntax patterns, circular references)
 - **SC-007**: Users writing php-script code experience zero incorrect syntax error flags for valid php-script syntax
 - **SC-008**: Configuration loading completes and applies syntax highlighting to existing editor content within 200ms of editor instantiation
+- **SC-009**: Editor content is persisted to localStorage within 500ms of any content change
+- **SC-010**: localStorage content is restored and displayed within 100ms of editor initialization
+- **SC-011**: "Revert to original" functionality discards local changes and restores server content within 100ms
 
 ## Clarifications
 
@@ -131,14 +157,21 @@ As a backend developer, I need to configure context variables (e.g., `user`, `re
 - Q: How are configuration reloads triggered? → A: Configuration only loads on fresh page load/editor instantiation - no automatic reloads during editing session
 - Q: What parameters should editor send when fetching configuration? → A: Context parameters (user ID, session token, editing context) - allows server to provide user/context-specific configuration
 - Q: What happens when server is unreachable (network error)? → A: Load editor with fallback minimal mode and persistent error banner with retry button
+- Q: How is configuration delivered to the editor? → A: Server-side PHP writes configuration directly into JavaScript configuration object during server-side rendering - no AJAX requests
+- Q: Should configuration be cached in localStorage? → A: No - configuration is never cached in localStorage
+- Q: Should editor content be persisted? → A: Yes - persist current editor code value in localStorage, pre-fill on page reload, localStorage content always wins over server-provided initial content
+- Q: How to reset to server-provided content? → A: Provide API functionality to forget local changes and revert to server-side given content
 
 ## Assumptions
 
-- Configuration will be provided in a structured format (JSON or similar) that can be parsed and validated
+- Configuration will be provided as a JavaScript object embedded in server-rendered HTML
+- Configuration will be in a structured format (JSON-like JavaScript object) that can be parsed and validated
 - Backend developers have the technical knowledge to create valid language definitions and context schemas
 - The editor already has core editing functionality and extension points for language support
 - Configuration size will be reasonable (< 1MB) for browser-based loading and parsing
 - The php-script language grammar is well-defined and stable enough to be formalized
 - Function whitelist will contain standard PHP function names that exist in the server-side PHP environment
 - Each editor instance may have a different configuration based on server-side php-script engine context
-- Client application will have access to user ID, session token, or other context identifiers to pass to configuration endpoint
+- Server-side PHP rendering engine has access to user context and can generate appropriate configuration
+- Browser supports localStorage API (fallback gracefully if unavailable)
+- Editor content size will be reasonable for localStorage storage (typically < 5MB per editor instance)
