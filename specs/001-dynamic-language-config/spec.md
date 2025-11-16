@@ -17,10 +17,10 @@ As a backend developer, I need to configure the editor with the php-script langu
 
 **Acceptance Scenarios**:
 
-1. **Given** a language configuration file defining php-script syntax rules, **When** the editor loads the configuration, **Then** the editor recognizes php-script syntax patterns (dot notation, no $ prefix)
+1. **Given** a language configuration file defining php-script syntax rules, **When** the editor loads the configuration on instantiation, **Then** the editor recognizes php-script syntax patterns (dot notation, no $ prefix)
 2. **Given** the editor has loaded php-script language rules, **When** a user types `user.name`, **Then** the syntax is highlighted correctly as valid php-script
 3. **Given** the editor is configured for php-script, **When** a user types PHP syntax like `$user->name`, **Then** the editor displays this as incorrect or different from standard php-script syntax
-4. **Given** a language configuration update, **When** the configuration is reloaded, **Then** syntax highlighting updates immediately without page refresh
+4. **Given** a language configuration is being loaded, **When** configuration loading completes, **Then** syntax highlighting applies immediately to existing editor content
 
 ---
 
@@ -36,7 +36,7 @@ As a backend developer, I need to configure which PHP functions are available in
 
 1. **Given** a whitelist configuration containing functions `strlen` and `substr`, **When** a user types the beginning of a function name, **Then** code completion suggests only whitelisted functions
 2. **Given** a function `exec` is NOT in the whitelist, **When** a user types `exec`, **Then** code completion does not suggest it
-3. **Given** the whitelist is updated to add `date`, **When** the configuration reloads, **Then** `date` appears in code completion suggestions
+3. **Given** two editor instances with different whitelists (one with `date`, one without), **When** a user types in each editor, **Then** code completion reflects each instance's specific whitelist
 4. **Given** a user types a non-whitelisted function, **When** validation runs, **Then** the editor shows a warning that the function is not available
 
 ---
@@ -54,19 +54,20 @@ As a backend developer, I need to configure context variables (e.g., `user`, `re
 1. **Given** context variable `user` is configured with properties `name` and `email`, **When** a user types `user.`, **Then** code completion suggests `name` and `email`
 2. **Given** context variable `user` has a nested object `logins` with method `count()`, **When** a user types `user.logins.`, **Then** code completion suggests the `count()` method
 3. **Given** multiple context variables are configured (`user`, `request`, `session`), **When** a user types any variable name followed by `.`, **Then** context-appropriate suggestions appear
-4. **Given** the context configuration is updated, **When** the editor reloads, **Then** code completion reflects the updated context structure
+4. **Given** two editor instances with different context schemas, **When** a user types in each editor, **Then** code completion reflects each instance's specific context variables
 
 ---
 
 ### Edge Cases
 
-- What happens when the language configuration file is malformed or invalid?
-- What happens when the whitelist is empty (no functions allowed)?
-- What happens when context variables reference circular dependencies?
-- How does the editor handle very large context variable structures (hundreds of properties)?
-- What happens when a user writes code before the configuration has finished loading?
-- How are conflicts handled when a context variable name matches a language keyword?
-- What happens when the configuration specifies a context variable type that doesn't exist?
+- **Malformed configuration**: Editor loads with fallback minimal syntax highlighting (keywords only) and displays persistent error banner with details
+- **Network error / server unreachable**: Editor loads with fallback minimal mode and persistent error banner with retry button - allows basic editing
+- **Empty whitelist**: Code completion shows no function suggestions, validation warns on any function usage
+- **Circular dependencies in context variables**: Configuration validation rejects bundle, falls back to minimal mode with error banner
+- **Very large context structures**: Editor may limit completion suggestions to first N properties (performance constraint), show "more..." indicator
+- **Code written before configuration loads**: Show loading indicator, queue user input, apply syntax highlighting retroactively when loaded
+- **Context variable conflicts with keywords**: Context variable takes precedence in completion, syntax highlighting follows language rules
+- **Invalid context variable types**: Configuration validation flags unknown types, omits invalid variables from completion
 
 ## Requirements *(mandatory)*
 
@@ -80,10 +81,14 @@ As a backend developer, I need to configure context variables (e.g., `user`, `re
 - **FR-006**: System MUST provide intelligent code completion for context variable properties and methods based on configuration
 - **FR-007**: System MUST support nested object access in code completion (e.g., `user.logins.count()` with completion at each level)
 - **FR-008**: System MUST validate php-script code against the configured language definition and show syntax errors
-- **FR-009**: System MUST reload configuration without requiring a full page refresh
-- **FR-010**: System MUST handle configuration errors gracefully and display clear error messages to the backend developer
-- **FR-011**: System MUST persist configuration across editor sessions
-- **FR-012**: System MUST distinguish between php-script syntax and standard PHP syntax in highlighting
+- **FR-009**: System MUST load configuration only on editor instantiation - no automatic reloads during active editing session
+- **FR-010**: System MUST handle configuration errors (malformed, invalid, network failure) gracefully by loading editor with fallback minimal syntax highlighting and displaying persistent error banner with error details
+- **FR-011**: System MUST provide retry mechanism (retry button in error banner) for failed configuration loads due to network errors
+- **FR-012**: System MUST fetch complete configuration bundle from server for each editor instance initialization
+- **FR-013**: System MUST send context parameters (user ID, session token, editing context) when requesting configuration from server to enable user/context-specific configuration
+- **FR-014**: Server MUST provide complete configuration bundles containing all three components (language definition, function whitelist, context schema) - partial updates are not supported
+- **FR-015**: System MUST distinguish between php-script syntax and standard PHP syntax in highlighting
+- **FR-016**: System MUST provide fallback minimal syntax highlighting (keywords only) when configuration is invalid or unavailable
 
 ### Key Entities
 
@@ -111,7 +116,21 @@ As a backend developer, I need to configure context variables (e.g., `user`, `re
 - **SC-005**: Configured context variables and their properties are accurately suggested with 100% coverage
 - **SC-006**: Configuration validation catches and reports 95% of common configuration errors (malformed JSON, invalid syntax patterns, circular references)
 - **SC-007**: Users writing php-script code experience zero incorrect syntax error flags for valid php-script syntax
-- **SC-008**: Configuration reload completes without disrupting active editing sessions or losing unsaved work
+- **SC-008**: Configuration loading completes and applies syntax highlighting to existing editor content within 200ms of editor instantiation
+
+## Clarifications
+
+### Session 2025-11-16
+
+- Q: Is the languageId fixed or variable? → A: Language ID is always exactly "php-script"
+- Q: Can function whitelist and context variables be cached? → A: No caching - server is master, configuration is per-editor-instance
+- Q: Are context variables strict mode or permissive? → A: Server provides all allowed variables, no strict/permissive toggle needed
+- Q: Is configuration static or dynamic per editor instance? → A: Dynamic per editor instance, loaded from server on each editor initialization
+- Q: Should server support partial updates or complete bundle only? → A: Always send complete configuration bundle containing all three components (language + whitelist + context)
+- Q: What happens when configuration is malformed or invalid? → A: Load editor with fallback minimal syntax highlighting (keywords only) and show persistent error banner
+- Q: How are configuration reloads triggered? → A: Configuration only loads on fresh page load/editor instantiation - no automatic reloads during editing session
+- Q: What parameters should editor send when fetching configuration? → A: Context parameters (user ID, session token, editing context) - allows server to provide user/context-specific configuration
+- Q: What happens when server is unreachable (network error)? → A: Load editor with fallback minimal mode and persistent error banner with retry button
 
 ## Assumptions
 
@@ -119,6 +138,7 @@ As a backend developer, I need to configure context variables (e.g., `user`, `re
 - Backend developers have the technical knowledge to create valid language definitions and context schemas
 - The editor already has core editing functionality and extension points for language support
 - Configuration size will be reasonable (< 1MB) for browser-based loading and parsing
-- Context variable schemas will be static during an editing session (updated only on reload)
 - The php-script language grammar is well-defined and stable enough to be formalized
 - Function whitelist will contain standard PHP function names that exist in the server-side PHP environment
+- Each editor instance may have a different configuration based on server-side php-script engine context
+- Client application will have access to user ID, session token, or other context identifiers to pass to configuration endpoint
