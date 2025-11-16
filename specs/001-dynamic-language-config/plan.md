@@ -7,19 +7,19 @@
 
 ## Summary
 
-Build an NPM package that provides a pre-configured Monaco Editor for editing php-script language code. The package will support both TypeScript and vanilla JavaScript projects, with the editor pre-configured with language definitions, whitelisted functions, and context variables. The server-side PHP engine will generate the Monarch language definition, which the editor will consume to provide syntax highlighting, code completion, and validation.
+Build an NPM package that provides a pre-configured Monaco Editor for editing php-script language code. The package will support both TypeScript and vanilla JavaScript projects, receiving configuration (language definitions, whitelisted functions, and context variables) via server-side rendered JavaScript objects embedded in HTML. The server-side PHP engine generates the complete configuration bundle during page rendering. Editor content is automatically persisted to localStorage to prevent data loss across page reloads, with localStorage content taking precedence over server-provided initial values.
 
 ## Technical Context
 
 **Language/Version**: TypeScript 5.x (source), outputs ES2020+ and CommonJS for compatibility
 **Primary Dependencies**: Monaco Editor (microsoft/monaco-editor), TypeScript compiler
-**Storage**: Browser localStorage for configuration persistence (optional feature)
+**Storage**: Browser localStorage for editor content persistence (NOT configuration - configuration comes from server-side rendering)
 **Testing**: Vitest for unit tests, Playwright for browser integration tests
 **Target Platform**: Modern browsers (Chrome, Firefox, Safari, Edge - latest 2 versions)
 **Project Type**: NPM package (single library project)
-**Performance Goals**: <2s initial load, <16ms keystroke latency, <100ms syntax highlighting, support 10k line files
-**Constraints**: Client-side only (no server dependencies for core features), <500KB bundle size, tree-shakeable exports
-**Scale/Scope**: Single NPM package, dual TypeScript/JavaScript support, Monaco Editor integration
+**Performance Goals**: <2s initial load, <16ms keystroke latency, <100ms syntax highlighting, support 10k line files, <500ms content save to localStorage
+**Constraints**: Client-side only for editing, configuration delivered via server-side rendering (embedded in HTML), <500KB bundle size, tree-shakeable exports
+**Scale/Scope**: Single NPM package, dual TypeScript/JavaScript support, Monaco Editor integration, server-side rendering integration
 
 ## Constitution Check
 
@@ -28,12 +28,12 @@ Build an NPM package that provides a pre-configured Monaco Editor for editing ph
 ### I. Browser-First Architecture ✅
 - **Status**: PASS
 - **Compliance**: NPM package will be client-side only, using Monaco Editor which runs in all major browsers
-- **Evidence**: No server dependencies for core editing; configuration loading from server is optional
+- **Evidence**: No server dependencies for core editing; configuration delivered via server-side rendering (embedded in HTML), no AJAX requests needed
 
 ### II. Language Support Excellence ✅
 - **Status**: PASS
 - **Compliance**: Monaco Monarch language definition for php-script syntax, code completion provider for whitelisted functions and context variables
-- **Evidence**: Three user stories specifically address language definition (P1), function completion (P2), and context completion (P3)
+- **Evidence**: Four user stories address language definition (P1), function completion (P2), context completion (P3), and content persistence (P2)
 
 ### III. Progressive Enhancement ✅
 - **Status**: PASS
@@ -84,15 +84,18 @@ src/
 ├── index.ts                    # Main entry point, exports editor factory
 ├── editor.ts                   # Editor initialization and configuration
 ├── language/
-│   ├── monarch.ts              # Monarch language definition loader
+│   ├── monarch.ts              # Monarch language definition registration
 │   ├── completion.ts           # Completion provider for functions + context
 │   └── validation.ts           # Language validation logic
 ├── config/
 │   ├── types.ts                # TypeScript types for configuration
-│   ├── loader.ts               # Configuration loading and validation
-│   └── defaults.ts             # Default configuration values
+│   ├── validator.ts            # Configuration validation (from server-rendered object)
+│   └── defaults.ts             # Default/fallback configuration values
+├── persistence/
+│   ├── content-store.ts        # localStorage content persistence
+│   ├── storage-manager.ts      # Storage quota and error handling
+│   └── revert-api.ts           # API to discard local changes
 └── utils/
-    ├── storage.ts              # Browser storage helpers (optional persistence)
     └── errors.ts               # Custom error types
 
 tests/
@@ -101,16 +104,22 @@ tests/
 │   │   ├── monarch.test.ts     # Monarch definition tests
 │   │   ├── completion.test.ts  # Completion provider tests
 │   │   └── validation.test.ts  # Validation logic tests
-│   └── config/
-│       ├── loader.test.ts      # Config loading tests
-│       └── types.test.ts       # Type validation tests
+│   ├── config/
+│   │   ├── validator.test.ts   # Config validation tests
+│   │   └── types.test.ts       # Type validation tests
+│   └── persistence/
+│       ├── content-store.test.ts    # localStorage persistence tests
+│       ├── storage-manager.test.ts  # Quota/error handling tests
+│       └── revert-api.test.ts       # Revert functionality tests
 ├── integration/
-│   ├── editor.test.ts          # Editor initialization tests
+│   ├── editor.test.ts               # Editor initialization with server-rendered config
 │   ├── syntax-highlighting.test.ts  # Syntax highlighting integration
-│   └── code-completion.test.ts      # Code completion integration
+│   ├── code-completion.test.ts      # Code completion integration
+│   └── content-persistence.test.ts  # localStorage restore and revert tests
 └── e2e/
-    ├── browser-compat.spec.ts  # Cross-browser compatibility (Playwright)
-    └── performance.spec.ts     # Performance benchmarks (Playwright)
+    ├── browser-compat.spec.ts       # Cross-browser compatibility (Playwright)
+    ├── performance.spec.ts          # Performance benchmarks (Playwright)
+    └── persistence.spec.ts          # Content persistence across page reloads
 
 dist/                           # Built output (generated)
 ├── index.js                    # CommonJS bundle
@@ -119,7 +128,7 @@ dist/                           # Built output (generated)
 └── monaco-workers/             # Monaco worker files (bundled)
 ```
 
-**Structure Decision**: Single NPM package structure chosen because this is a library, not an application. TypeScript source in `src/`, compiled outputs in `dist/`. Monaco Editor will be bundled as a dependency with workers included for syntax highlighting performance. Dual CommonJS/ESM builds support both TypeScript and vanilla JavaScript consumers.
+**Structure Decision**: Single NPM package structure chosen because this is a library, not an application. TypeScript source in `src/`, compiled outputs in `dist/`. Configuration is received from server-side rendered JavaScript objects (embedded in HTML by PHP), not fetched via AJAX. Added `persistence/` module for localStorage-based content management to prevent data loss across page reloads. Monaco Editor will be bundled as a dependency with workers included for syntax highlighting performance. Dual CommonJS/ESM builds support both TypeScript and vanilla JavaScript consumers.
 
 ## Complexity Tracking
 
