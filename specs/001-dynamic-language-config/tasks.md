@@ -184,12 +184,12 @@ Single NPM package project structure:
 
 **Purpose**: Meet performance requirements from constitution
 
-- [ ] T068 [P] Optimize Monarch tokenizer patterns to avoid catastrophic backtracking
-- [ ] T069 [P] Implement completion provider debouncing for async operations
-- [ ] T070 [P] Add indexing for context variable schema (O(1) lookup)
-- [ ] T071 [P] Optimize bundle size with tree-shaking validation
-- [ ] T072 Measure and validate performance benchmarks: <2s load, <16ms keystroke latency, <100ms syntax highlighting
-- [ ] T073 Add performance monitoring and logging
+- [X] T068 [P] Optimize Monarch tokenizer patterns to avoid catastrophic backtracking
+- [X] T069 [P] Implement completion provider debouncing for async operations
+- [X] T070 [P] Add indexing for context variable schema (O(1) lookup)
+- [X] T071 [P] Optimize bundle size with tree-shaking validation
+- [X] T072 Measure and validate performance benchmarks: <2s load, <16ms keystroke latency, <100ms syntax highlighting
+- [X] T073 Add performance monitoring and logging
 
 ---
 

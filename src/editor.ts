@@ -401,8 +401,8 @@ export interface PhpScriptEditor {
  */
 export function setupMonacoWorkers(): void {
   if (typeof window !== 'undefined') {
-    // @ts-expect-error Monaco worker configuration
-    window.MonacoEnvironment = {
+    // Monaco worker configuration - MonacoEnvironment is global
+    (window as any).MonacoEnvironment = {
       getWorker(_: string, label: string): Worker {
         // This is a placeholder - actual worker configuration
         // will be implemented based on the bundler setup

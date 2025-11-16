@@ -60,9 +60,9 @@ export { logger, LogLevel } from './utils/logger';
 export type { LogEntry } from './utils/logger';
 
 // Re-export Monaco types for convenience
-export type {
-  IStandaloneCodeEditor,
-  ITextModel,
-  Position,
-  Range,
-} from 'monaco-editor/esm/vs/editor/editor.api';
+// Note: Import from monaco-editor main module for better compatibility
+import type * as Monaco from 'monaco-editor';
+export type IStandaloneCodeEditor = Monaco.editor.IStandaloneCodeEditor;
+export type ITextModel = Monaco.editor.ITextModel;
+export type Position = Monaco.Position;
+export type Range = Monaco.Range;

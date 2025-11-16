@@ -113,6 +113,67 @@ class Logger {
   exportLogs(): string {
     return JSON.stringify(this.logs, null, 2);
   }
+
+  /**
+   * Measure performance of a synchronous operation
+   *
+   * Executes the function and logs the execution time.
+   *
+   * @param label - Label for the measurement
+   * @param fn - Function to measure
+   * @returns Result of the function
+   *
+   * @example
+   * ```typescript
+   * const result = logger.measure('syntax-highlighting', () => {
+   *   return tokenizeCode(code);
+   * });
+   * // Logs: "Performance: syntax-highlighting { durationMs: 42.5 }"
+   * ```
+   */
+  measure<T>(label: string, fn: () => T): T {
+    const start = performance.now();
+    try {
+      const result = fn();
+      const duration = performance.now() - start;
+      this.debug(`Performance: ${label}`, { durationMs: duration });
+      return result;
+    } catch (error) {
+      const duration = performance.now() - start;
+      this.error(`Performance: ${label} (failed)`, { durationMs: duration, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Measure performance of an asynchronous operation
+   *
+   * Executes the async function and logs the execution time.
+   *
+   * @param label - Label for the measurement
+   * @param fn - Async function to measure
+   * @returns Promise with result of the function
+   *
+   * @example
+   * ```typescript
+   * const data = await logger.measureAsync('load-config', async () => {
+   *   return await fetchConfiguration();
+   * });
+   * ```
+   */
+  async measureAsync<T>(label: string, fn: () => Promise<T>): Promise<T> {
+    const start = performance.now();
+    try {
+      const result = await fn();
+      const duration = performance.now() - start;
+      this.debug(`Performance: ${label}`, { durationMs: duration });
+      return result;
+    } catch (error) {
+      const duration = performance.now() - start;
+      this.error(`Performance: ${label} (failed)`, { durationMs: duration, error });
+      throw error;
+    }
+  }
 }
 
 // Singleton instance

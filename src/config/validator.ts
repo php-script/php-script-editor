@@ -3,10 +3,6 @@
  */
 
 import type {
-  ConfigurationBundle,
-  LanguageDefinition,
-  FunctionWhitelist,
-  ContextVariableSchema,
   ContextVariable,
   ValidationError,
   ValidationResult,

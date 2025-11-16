@@ -57,12 +57,15 @@ export interface MonarchLanguageDefinition {
 }
 
 /**
- * Monarch tokenizer rule
+ * Monarch tokenizer rule - can be a tuple or object
  */
-export interface MonarchRule {
-  regex: string | RegExp;
-  action: string | MonarchAction | (string | MonarchAction)[];
-}
+export type MonarchRule =
+  | [RegExp | string, string | MonarchAction]
+  | [RegExp | string, string | MonarchAction, string]
+  | {
+      regex: string | RegExp;
+      action: string | MonarchAction | (string | MonarchAction)[];
+    };
 
 /**
  * Monarch action for token state transitions
@@ -72,6 +75,7 @@ export interface MonarchAction {
   next?: string;
   nextEmbedded?: string;
   log?: string;
+  cases?: Record<string, string | MonarchAction>;
 }
 
 /**

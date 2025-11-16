@@ -46,7 +46,7 @@ export function createFunctionCompletionProvider(
       // Extract the word being typed
       const textBeforeCursor = lineText.substring(0, column - 1);
       const match = textBeforeCursor.match(/\b([a-zA-Z_][a-zA-Z0-9_]*)$/);
-      const prefix = match ? match[1] : '';
+      const prefix = (match && match[1]) || '';
 
       // Filter functions by prefix
       const matchingFunctions = filterWhitelistedFunctions(whitelist, prefix);
@@ -56,7 +56,7 @@ export function createFunctionCompletionProvider(
         label: func.name,
         kind: 'Function',
         insertText: `${func.name}()`,
-        documentation: func.documentation,
+        documentation: func.documentation || '',
         detail: getFunctionSignature(func),
         sortText: func.name,
       }));
@@ -113,7 +113,7 @@ export function registerFunctionCompletionProvider(
       const lineText = model.getLineContent(position.lineNumber);
       const textBeforeCursor = lineText.substring(0, position.column - 1);
       const match = textBeforeCursor.match(/\b([a-zA-Z_][a-zA-Z0-9_]*)$/);
-      const prefix = match ? match[1] : '';
+      const prefix = (match && match[1]) || '';
 
       const matchingFunctions = filterWhitelistedFunctions(whitelist, prefix);
 
@@ -128,7 +128,7 @@ export function registerFunctionCompletionProvider(
         kind: monaco.languages.CompletionItemKind.Function,
         insertText: `${func.name}()`,
         documentation: {
-          value: func.documentation,
+          value: func.documentation || '',
         },
         detail: getFunctionSignature(func),
         range: new monaco.Range(
