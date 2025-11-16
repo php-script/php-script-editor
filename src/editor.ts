@@ -4,7 +4,7 @@
 
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import type { ConfigurationBundle } from './config/types';
-import { EditorInitializationError } from './utils/errors';
+import { EditorInitializationError, ContentPersistenceError } from './utils/errors';
 import { registerPhpScriptLanguage } from './language/monarch';
 import {
   registerFunctionCompletionProvider,
@@ -12,6 +12,21 @@ import {
 } from './language/completion';
 import { registerDiagnosticProvider } from './language/diagnostics';
 import { registerHoverProvider } from './language/hover';
+import {
+  saveContent,
+  loadContent,
+  clearContent,
+  hasPersistedContent,
+  getStorageKey,
+  loadOriginalContent,
+} from './persistence/content-store';
+import {
+  checkStorageAvailable,
+  canStoreContent,
+  cleanupOldEntries,
+} from './persistence/storage-manager';
+import { logger } from './utils/logger';
+import { AUTOSAVE_DEBOUNCE_MS } from './config/defaults';
 
 /**
  * Editor creation options
@@ -149,36 +164,179 @@ export async function createPhpScriptEditor(
     languageDisposables.push(contextProvider);
   }
 
+  // Determine storage key
+  const storageKey = getStorageKey(options.storageKey);
+  const originalContent = options.initialValue || '';
+  const persistenceEnabled = options.enableContentPersistence !== false;
+
+  // Determine initial content (prioritize localStorage over server-provided)
+  let initialContent = originalContent;
+  let persistedContentLoaded = false;
+
+  if (persistenceEnabled && checkStorageAvailable()) {
+    try {
+      if (hasPersistedContent(storageKey)) {
+        const persisted = loadContent(storageKey);
+        if (persisted !== null) {
+          initialContent = persisted;
+          persistedContentLoaded = true;
+          logger.info('Restored content from localStorage', {
+            storageKey,
+            contentLength: persisted.length,
+          });
+        }
+      }
+    } catch (error) {
+      // Log error but continue with server-provided content
+      if (error instanceof ContentPersistenceError) {
+        logger.error('Failed to load persisted content, using server content', {
+          storageKey,
+          error: error.message,
+          code: error.code,
+        });
+      } else {
+        logger.error('Unexpected error loading persisted content', { storageKey, error });
+      }
+      // If corrupted data was detected, it's already been cleared
+      // Fall back to original content
+      initialContent = originalContent;
+    }
+  }
+
   // Create editor with php-script language
   const editor = monaco.editor.create(container, {
-    value: options.initialValue || '',
+    value: initialContent,
     language: 'php-script',
     theme: options.theme || 'vs-dark',
     ...options.monacoOptions,
   });
 
+  // Setup debounced auto-save
+  let autoSaveTimeout: ReturnType<typeof setTimeout> | null = null;
+  let contentChangeListener: monaco.IDisposable | null = null;
+
+  if (persistenceEnabled && checkStorageAvailable()) {
+    contentChangeListener = editor.onDidChangeModelContent(() => {
+      // Clear previous timeout
+      if (autoSaveTimeout !== null) {
+        clearTimeout(autoSaveTimeout);
+      }
+
+      // Debounce save operation
+      autoSaveTimeout = setTimeout(() => {
+        const currentContent = editor.getValue();
+
+        // Check if we can store the content
+        if (!canStoreContent(currentContent)) {
+          logger.warn('Storage quota exceeded, attempting cleanup', { storageKey });
+          // Try to free space
+          const freedSpace = cleanupOldEntries();
+          logger.info('Cleanup freed space', { freedSpace });
+
+          // Try again after cleanup
+          if (!canStoreContent(currentContent)) {
+            logger.error('Cannot save content even after cleanup', { storageKey });
+            // Could emit an event here for UI notification
+            return;
+          }
+        }
+
+        try {
+          saveContent(storageKey, currentContent, originalContent);
+          logger.debug('Content auto-saved', {
+            storageKey,
+            contentLength: currentContent.length,
+          });
+        } catch (error) {
+          if (error instanceof ContentPersistenceError && error.code === 'QUOTA_EXCEEDED') {
+            logger.error('Storage quota exceeded during save', { storageKey, error });
+            // Could emit an event here for UI notification
+          } else {
+            logger.error('Failed to auto-save content', { storageKey, error });
+          }
+        }
+      }, AUTOSAVE_DEBOUNCE_MS);
+    });
+  }
+
   const editorInstance: PhpScriptEditor = {
     monaco: editor,
     getValue: () => editor.getValue(),
-    setValue: (value: string) => editor.setValue(value),
+    setValue: (value: string) => {
+      editor.setValue(value);
+      // Auto-save will be triggered by onDidChangeModelContent
+    },
     getConfiguration: () => options.configuration,
     revertToOriginal: () => {
-      // Will be implemented in User Story 4
-      console.warn('revertToOriginal not yet implemented');
+      if (!persistenceEnabled) {
+        logger.warn('Content persistence is disabled, cannot revert');
+        return;
+      }
+
+      // Clear localStorage
+      clearContent(storageKey);
+      logger.info('Cleared localStorage content', { storageKey });
+
+      // Restore original content
+      editor.setValue(originalContent);
+      logger.info('Reverted to original content', {
+        storageKey,
+        contentLength: originalContent.length,
+      });
     },
-    hasUnsavedChanges: () => false,
+    hasUnsavedChanges: () => {
+      if (!persistenceEnabled) {
+        return false;
+      }
+
+      const currentContent = editor.getValue();
+      const original = loadOriginalContent(storageKey) || originalContent;
+      return currentContent !== original;
+    },
     clearLocalStorage: () => {
-      // Will be implemented in User Story 4
-      console.warn('clearLocalStorage not yet implemented');
+      if (!persistenceEnabled) {
+        logger.warn('Content persistence is disabled, nothing to clear');
+        return;
+      }
+
+      clearContent(storageKey);
+      logger.info('Cleared localStorage content (without changing editor)', { storageKey });
     },
-    getOriginalContent: () => options.initialValue || '',
+    getOriginalContent: () => {
+      if (!persistenceEnabled) {
+        return originalContent;
+      }
+
+      return loadOriginalContent(storageKey) || originalContent;
+    },
     dispose: () => {
+      // Clear auto-save timeout
+      if (autoSaveTimeout !== null) {
+        clearTimeout(autoSaveTimeout);
+      }
+
+      // Dispose content change listener
+      if (contentChangeListener) {
+        contentChangeListener.dispose();
+      }
+
       // Dispose language providers
       languageDisposables.forEach((d) => d.dispose());
+
       // Dispose editor
       editor.dispose();
+
+      logger.info('Editor disposed', { storageKey, persistenceEnabled });
     },
   };
+
+  // Log successful initialization
+  logger.info('Editor initialized', {
+    storageKey,
+    persistenceEnabled,
+    persistedContentLoaded,
+    hasOriginalContent: !!originalContent,
+  });
 
   return editorInstance;
 }

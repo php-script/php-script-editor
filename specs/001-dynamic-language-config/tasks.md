@@ -143,23 +143,23 @@ Single NPM package project structure:
 
 ### Tests for User Story 4 (TDD - Write FIRST, Ensure FAIL)
 
-- [ ] T046 [P] [US4] Unit test for localStorage content persistence in tests/unit/persistence/content-store.test.ts
-- [ ] T047 [P] [US4] Unit test for storage quota handling in tests/unit/persistence/storage-manager.test.ts
-- [ ] T048 [P] [US4] Unit test for revert API in tests/unit/persistence/revert-api.test.ts
-- [ ] T049 [P] [US4] Integration test for content restore across reloads in tests/integration/content-persistence.test.ts
-- [ ] T050 [P] [US4] E2E test for persistence across page reloads in tests/e2e/persistence.spec.ts
+- [X] T046 [P] [US4] Unit test for localStorage content persistence in tests/unit/persistence/content-store.test.ts
+- [X] T047 [P] [US4] Unit test for storage quota handling in tests/unit/persistence/storage-manager.test.ts
+- [X] T048 [P] [US4] Unit test for revert API in tests/unit/persistence/revert-api.test.ts
+- [X] T049 [P] [US4] Integration test for content restore across reloads in tests/integration/content-persistence.test.ts
+- [X] T050 [P] [US4] E2E test for persistence across page reloads in tests/e2e/persistence.spec.ts
 
 ### Implementation for User Story 4
 
-- [ ] T051 [P] [US4] Implement localStorage content persistence in src/persistence/content-store.ts
-- [ ] T052 [P] [US4] Implement storage quota management and error handling in src/persistence/storage-manager.ts
-- [ ] T053 [P] [US4] Implement revert API in src/persistence/revert-api.ts
-- [ ] T054 [US4] Integrate content persistence into editor initialization in src/editor.ts
-- [ ] T055 [US4] Add debounced auto-save (500ms) on content changes
-- [ ] T056 [US4] Implement priority logic: localStorage content > server-provided content
-- [ ] T057 [US4] Add corrupted data detection and fallback handling
-- [ ] T058 [US4] Add storage quota exceeded warning UI
-- [ ] T059 [US4] Add logging for persistence events
+- [X] T051 [P] [US4] Implement localStorage content persistence in src/persistence/content-store.ts
+- [X] T052 [P] [US4] Implement storage quota management and error handling in src/persistence/storage-manager.ts
+- [X] T053 [P] [US4] Implement revert API in src/persistence/revert-api.ts
+- [X] T054 [US4] Integrate content persistence into editor initialization in src/editor.ts
+- [X] T055 [US4] Add debounced auto-save (500ms) on content changes
+- [X] T056 [US4] Implement priority logic: localStorage content > server-provided content
+- [X] T057 [US4] Add corrupted data detection and fallback handling
+- [X] T058 [US4] Add storage quota exceeded warning UI
+- [X] T059 [US4] Add logging for persistence events
 
 **Checkpoint**: Content persistence working - users won't lose work on accidental refresh/crash
 
