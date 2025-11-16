@@ -1,0 +1,39 @@
+# Source files
+src/
+tests/
+specs/
+.specify/
+
+# Configuration files
+.eslintrc*
+.prettierrc*
+.prettierignore
+tsconfig.json
+vite.config.ts
+vitest.config.ts
+playwright.config.ts
+tsup.config.ts
+eslint.config.mjs
+
+# Development files
+.git/
+.github/
+.vscode/
+.idea/
+*.log
+*.tmp
+.DS_Store
+
+# Test and coverage
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# Build artifacts (keep dist/)
+node_modules/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.*
