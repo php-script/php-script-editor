@@ -5,6 +5,13 @@
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import type { ConfigurationBundle } from './config/types';
 import { EditorInitializationError } from './utils/errors';
+import { registerPhpScriptLanguage } from './language/monarch';
+import {
+  registerFunctionCompletionProvider,
+  registerContextCompletionProvider,
+} from './language/completion';
+import { registerDiagnosticProvider } from './language/diagnostics';
+import { registerHoverProvider } from './language/hover';
 
 /**
  * Editor creation options
@@ -104,10 +111,48 @@ export async function createPhpScriptEditor(
   // Setup Monaco workers
   setupMonacoWorkers();
 
-  // Placeholder implementation - will be completed in subsequent tasks
+  // Register php-script language
+  registerPhpScriptLanguage(options.configuration.languageDefinition);
+
+  // Register language providers
+  const languageDisposables: monaco.IDisposable[] = [];
+
+  // Function whitelist completion
+  if (options.configuration.functionWhitelist) {
+    const funcProvider = registerFunctionCompletionProvider(
+      'php-script',
+      options.configuration.functionWhitelist
+    );
+    languageDisposables.push(funcProvider);
+
+    // Hover provider for function documentation
+    const hoverProvider = registerHoverProvider(
+      'php-script',
+      options.configuration.functionWhitelist
+    );
+    languageDisposables.push(hoverProvider);
+
+    // Diagnostic provider for non-whitelisted functions
+    const diagnosticProvider = registerDiagnosticProvider(
+      'php-script',
+      options.configuration.functionWhitelist
+    );
+    languageDisposables.push(diagnosticProvider);
+  }
+
+  // Context variable completion
+  if (options.configuration.contextSchema) {
+    const contextProvider = registerContextCompletionProvider(
+      'php-script',
+      options.configuration.contextSchema
+    );
+    languageDisposables.push(contextProvider);
+  }
+
+  // Create editor with php-script language
   const editor = monaco.editor.create(container, {
     value: options.initialValue || '',
-    language: 'plaintext', // Will be set to 'php-script' after language registration
+    language: 'php-script',
     theme: options.theme || 'vs-dark',
     ...options.monacoOptions,
   });
@@ -118,16 +163,21 @@ export async function createPhpScriptEditor(
     setValue: (value: string) => editor.setValue(value),
     getConfiguration: () => options.configuration,
     revertToOriginal: () => {
-      // Placeholder
+      // Will be implemented in User Story 4
       console.warn('revertToOriginal not yet implemented');
     },
     hasUnsavedChanges: () => false,
     clearLocalStorage: () => {
-      // Placeholder
+      // Will be implemented in User Story 4
       console.warn('clearLocalStorage not yet implemented');
     },
     getOriginalContent: () => options.initialValue || '',
-    dispose: () => editor.dispose(),
+    dispose: () => {
+      // Dispose language providers
+      languageDisposables.forEach((d) => d.dispose());
+      // Dispose editor
+      editor.dispose();
+    },
   };
 
   return editorInstance;

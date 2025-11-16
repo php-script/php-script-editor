@@ -91,18 +91,18 @@ Single NPM package project structure:
 
 ### Tests for User Story 2 (TDD - Write FIRST, Ensure FAIL)
 
-- [ ] T026 [P] [US2] Unit test for function whitelist completion provider in tests/unit/language/completion.test.ts
-- [ ] T027 [P] [US2] Unit test for whitelist validation in tests/unit/config/validator.test.ts
-- [ ] T028 [P] [US2] Integration test for code completion in tests/integration/code-completion.test.ts
-- [ ] T029 [P] [US2] E2E test for function completion suggestions in tests/e2e/browser-compat.spec.ts
+- [X] T026 [P] [US2] Unit test for function whitelist completion provider in tests/unit/language/completion.test.ts
+- [X] T027 [P] [US2] Unit test for whitelist validation in tests/unit/config/validator.test.ts
+- [X] T028 [P] [US2] Integration test for code completion in tests/integration/code-completion.test.ts
+- [X] T029 [P] [US2] E2E test for function completion suggestions in tests/e2e/browser-compat.spec.ts
 
 ### Implementation for User Story 2
 
-- [ ] T030 [P] [US2] Implement function whitelist completion provider in src/language/completion.ts
-- [ ] T031 [US2] Integrate completion provider with Monaco editor in src/editor.ts
-- [ ] T032 [US2] Add validation warnings for non-whitelisted function usage
-- [ ] T033 [US2] Implement function signature display and documentation tooltips
-- [ ] T034 [US2] Add logging for completion provider events
+- [X] T030 [P] [US2] Implement function whitelist completion provider in src/language/completion.ts
+- [X] T031 [US2] Integrate completion provider with Monaco editor in src/editor.ts
+- [X] T032 [US2] Add validation warnings for non-whitelisted function usage
+- [X] T033 [US2] Implement function signature display and documentation tooltips
+- [X] T034 [US2] Add logging for completion provider events
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work - syntax highlighting + function completion
 

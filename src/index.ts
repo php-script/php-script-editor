@@ -49,6 +49,10 @@ export {
   ContentPersistenceError,
 } from './utils/errors';
 
+// Logger
+export { logger, LogLevel } from './utils/logger';
+export type { LogEntry } from './utils/logger';
+
 // Re-export Monaco types for convenience
 export type {
   IStandaloneCodeEditor,
