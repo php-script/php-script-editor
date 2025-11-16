@@ -65,19 +65,19 @@ Single NPM package project structure:
 
 ### Tests for User Story 1 (TDD - Write FIRST, Ensure FAIL)
 
-- [ ] T016 [P] [US1] Unit test for Monarch language registration in tests/unit/language/monarch.test.ts
-- [ ] T017 [P] [US1] Unit test for language configuration validation in tests/unit/config/validator.test.ts
-- [ ] T018 [P] [US1] Integration test for syntax highlighting in tests/integration/syntax-highlighting.test.ts
-- [ ] T019 [P] [US1] E2E test for php-script syntax highlighting in tests/e2e/browser-compat.spec.ts
+- [X] T016 [P] [US1] Unit test for Monarch language registration in tests/unit/language/monarch.test.ts
+- [X] T017 [P] [US1] Unit test for language configuration validation in tests/unit/config/validator.test.ts
+- [X] T018 [P] [US1] Integration test for syntax highlighting in tests/integration/syntax-highlighting.test.ts
+- [X] T019 [P] [US1] E2E test for php-script syntax highlighting in tests/e2e/browser-compat.spec.ts
 
 ### Implementation for User Story 1
 
-- [ ] T020 [P] [US1] Implement Monarch language definition registration in src/language/monarch.ts
-- [ ] T021 [P] [US1] Implement language validation logic in src/language/validation.ts
-- [ ] T022 [US1] Integrate language definition loading in src/editor.ts initialization flow
-- [ ] T023 [US1] Add error handling for malformed language definitions with fallback to minimal mode
-- [ ] T024 [US1] Implement persistent error banner UI for configuration errors
-- [ ] T025 [US1] Add logging for language registration events
+- [X] T020 [P] [US1] Implement Monarch language definition registration in src/language/monarch.ts
+- [X] T021 [P] [US1] Implement language validation logic in src/language/validation.ts
+- [X] T022 [US1] Integrate language definition loading in src/editor.ts initialization flow
+- [X] T023 [US1] Add error handling for malformed language definitions with fallback to minimal mode
+- [X] T024 [US1] Implement persistent error banner UI for configuration errors
+- [X] T025 [US1] Add logging for language registration events
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - editor recognizes php-script syntax and highlights correctly
 

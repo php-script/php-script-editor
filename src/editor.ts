@@ -2,7 +2,7 @@
  * Main editor initialization and configuration
  */
 
-import * as monaco from 'monaco-editor';
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import type { ConfigurationBundle } from './config/types';
 import { EditorInitializationError } from './utils/errors';
 

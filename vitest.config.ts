@@ -22,4 +22,9 @@ export default defineConfig({
       statements: 80,
     },
   },
+  resolve: {
+    alias: {
+      'monaco-editor': 'monaco-editor/esm/vs/editor/editor.api',
+    },
+  },
 });
