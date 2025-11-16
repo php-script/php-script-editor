@@ -25,24 +25,32 @@ npm install monaco-editor
 
 ## Quick Start (TypeScript)
 
-### 1. Basic Editor Setup
+### 1. Basic Editor Setup with Server-Side Rendering
 
 ```typescript
 import { createPhpScriptEditor } from 'php-script-monaco-editor';
 
+// Server-side PHP embeds configuration in HTML:
+// <script>
+//   window.phpScriptEditorConfig = { languageDefinition: {...}, functionWhitelist: {...}, contextSchema: {...} };
+//   window.phpScriptInitialContent = "user.name";
+// </script>
+
 // Get container element
 const container = document.getElementById('editor-container');
 
-// Create editor with default configuration
+// Create editor with server-provided configuration
 const editor = await createPhpScriptEditor(container, {
-  value: '// Start typing php-script code\nuser.name',
-  theme: 'vs-dark'
+  configuration: window.phpScriptEditorConfig,  // From server-side rendering
+  initialValue: window.phpScriptInitialContent, // From server (may be overridden by localStorage)
+  theme: 'vs-dark',
+  enableContentPersistence: true // Auto-save to localStorage (default: true)
 });
 
 console.log('Editor ready!');
 ```
 
-### 2. With Remote Configuration
+### 2. Content Persistence and Revert
 
 ```typescript
 import { createPhpScriptEditor } from 'php-script-monaco-editor';
@@ -50,25 +58,29 @@ import { createPhpScriptEditor } from 'php-script-monaco-editor';
 const editor = await createPhpScriptEditor(
   document.getElementById('editor-container'),
   {
-    value: 'user.logins.count()',
-    theme: 'vs-dark',
-    autoLoadConfiguration: true,
-    configurationLoader: async () => {
-      // Fetch configuration from your PHP backend
-      const response = await fetch('/api/php-script/editor-config');
-      if (!response.ok) {
-        throw new Error('Failed to load editor configuration');
-      }
-      return response.json();
-    },
-    enablePersistence: true // Cache config in localStorage
+    configuration: window.phpScriptEditorConfig,
+    initialValue: window.phpScriptInitialContent,
+    theme: 'vs-dark'
   }
 );
 
-// Listen for configuration changes
-editor.onConfigurationChanged((config) => {
-  console.log('Configuration updated:', config.bundleVersion);
-});
+// Content automatically persists to localStorage on every change (debounced 500ms)
+
+// Check if user has unsaved local changes
+if (editor.hasUnsavedChanges()) {
+  console.log('User has modified content locally');
+
+  // Optionally discard local changes and revert to server content
+  const confirm = window.confirm('Revert to original content?');
+  if (confirm) {
+    editor.revertToOriginal(); // Clears localStorage and restores server content
+  }
+}
+
+// Get original server-provided content
+const original = editor.getOriginalContent();
+console.log('Server provided:', original);
+console.log('Current content:', editor.getValue());
 ```
 
 ### 3. Update Configuration Dynamically
@@ -117,16 +129,19 @@ editor.updateContextSchema([
 ```javascript
 const { createPhpScriptEditor } = require('php-script-monaco-editor');
 
+// Server-side PHP embeds configuration in HTML:
+// <script>
+//   window.phpScriptEditorConfig = { ... };
+//   window.phpScriptInitialContent = "user.name";
+// </script>
+
 async function initEditor() {
   const container = document.getElementById('editor-container');
 
   const editor = await createPhpScriptEditor(container, {
-    value: 'user.name',
-    theme: 'vs-dark',
-    configurationLoader: async () => {
-      const res = await fetch('/api/editor-config');
-      return res.json();
-    }
+    configuration: window.phpScriptEditorConfig,  // From server-side rendering
+    initialValue: window.phpScriptInitialContent, // From server (may be overridden by localStorage)
+    theme: 'vs-dark'
   });
 
   console.log('Editor ready:', editor.getValue());
@@ -149,6 +164,18 @@ initEditor();
       border: 1px solid #ccc;
     }
   </style>
+  <script>
+    // Server-side PHP embeds configuration
+    window.phpScriptEditorConfig = {
+      languageDefinition: { /* ... */ },
+      functionWhitelist: { /* ... */ },
+      contextSchema: { /* ... */ },
+      bundleVersion: '1.0.0',
+      compatibility: { minEditorVersion: '1.0.0', phpScriptEngine: '2.5.0' },
+      metadata: { generatedAt: '2025-11-16T10:00:00Z', generatedBy: 'php-script-engine', environment: 'production' }
+    };
+    window.phpScriptInitialContent = 'user.logins.count()';
+  </script>
 </head>
 <body>
   <div id="editor-container"></div>
@@ -159,7 +186,8 @@ initEditor();
     const editor = await createPhpScriptEditor(
       document.getElementById('editor-container'),
       {
-        value: 'user.logins.count()',
+        configuration: window.phpScriptEditorConfig,
+        initialValue: window.phpScriptInitialContent,
         theme: 'vs-dark'
       }
     );
@@ -366,21 +394,27 @@ saveButton.addEventListener('click', async () => {
 ### Use Case 3: Multiple Editors with Shared Configuration
 
 ```typescript
-import { loadConfigurationFromURL } from 'php-script-monaco-editor';
+import { createPhpScriptEditor } from 'php-script-monaco-editor';
 
-// Load configuration once
-const sharedConfig = await loadConfigurationFromURL('/api/editor-config');
+// Server provides shared configuration via SSR
+// <script>
+//   window.phpScriptEditorConfig = { ... }; // Shared for all editors on page
+// </script>
 
-// Create multiple editors with same config
+// Create multiple editors with same configuration
 const editor1 = await createPhpScriptEditor(container1, {
-  value: 'user.name',
-  configuration: sharedConfig
+  initialValue: 'user.name',
+  configuration: window.phpScriptEditorConfig,
+  storageKey: 'editor-1' // Unique key for localStorage
 });
 
 const editor2 = await createPhpScriptEditor(container2, {
-  value: 'user.email',
-  configuration: sharedConfig
+  initialValue: 'user.email',
+  configuration: window.phpScriptEditorConfig,
+  storageKey: 'editor-2' // Unique key for localStorage
 });
+
+// Each editor has independent localStorage persistence
 ```
 
 ### Use Case 4: Dynamic Context Updates
@@ -426,17 +460,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 ```typescript
 // Check configuration was loaded successfully
 const config = editor.getConfiguration();
-if (!config) {
-  console.error('Configuration not loaded');
-  await editor.reloadConfiguration();
-}
+console.log('Loaded configuration version:', config.bundleVersion);
 
-// Verify configuration validity
+// Verify configuration validity before passing to editor
 import { validateConfigurationBundle } from 'php-script-monaco-editor';
-const validation = validateConfigurationBundle(configData);
+const validation = validateConfigurationBundle(window.phpScriptEditorConfig);
 if (!validation.valid) {
   console.error('Configuration errors:', validation.errors);
 }
+
+// If configuration is invalid, check server-side PHP rendering
+console.log('Server configuration:', window.phpScriptEditorConfig);
 ```
 
 ### Performance Issues
@@ -445,19 +479,25 @@ if (!validation.valid) {
 
 **Solution**:
 ```typescript
-// Limit context depth or use lazy loading
+// Pre-process configuration on server-side to limit context depth
+// Server-side PHP should limit context schema depth before rendering
+
+// On client-side, verify configuration size
+const configSize = JSON.stringify(window.phpScriptEditorConfig).length;
+if (configSize > 100000) { // 100KB threshold
+  console.warn('Large configuration may impact performance:', configSize, 'bytes');
+}
+
+// If needed, you can reduce context schema before initializing editor
+const config = { ...window.phpScriptEditorConfig };
+config.contextSchema.variables = config.contextSchema.variables.map(v => ({
+  ...v,
+  properties: v.properties?.slice(0, 50) // Limit to first 50 properties
+}));
+
 const editor = await createPhpScriptEditor(container, {
-  configurationLoader: async () => {
-    const config = await fetch('/api/editor-config').then(r => r.json());
-
-    // Reduce context schema depth if needed
-    config.contextSchema.variables = config.contextSchema.variables.map(v => ({
-      ...v,
-      properties: v.properties?.slice(0, 50) // Limit to first 50 properties
-    }));
-
-    return config;
-  }
+  configuration: config,
+  initialValue: window.phpScriptInitialContent
 });
 ```
 

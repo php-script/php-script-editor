@@ -14,31 +14,28 @@ This document defines the TypeScript/JavaScript API contracts for the php-script
 
 ### `createPhpScriptEditor(container, options?)`
 
-Factory function to create and initialize a Monaco Editor instance pre-configured for php-script.
+Factory function to create and initialize a Monaco Editor instance pre-configured for php-script. Configuration is received from server-side rendered JavaScript object (not fetched via AJAX). Editor content is automatically persisted to localStorage and restored on page load.
 
 **Parameters**:
 ```typescript
 interface CreateEditorOptions {
-  /** Initial code content */
-  value?: string;
+  /** Server-provided initial code content (can be overridden by localStorage) */
+  initialValue?: string;
 
   /** Editor theme (default: 'vs-dark') */
   theme?: 'vs' | 'vs-dark' | 'hc-black' | string;
 
-  /** Configuration bundle (if not provided, will attempt to load from defaults) */
-  configuration?: ConfigurationBundle;
-
-  /** Configuration loader function (for lazy loading) */
-  configurationLoader?: () => Promise<ConfigurationBundle>;
+  /** Configuration bundle from server-side rendering (embedded in window object) */
+  configuration: ConfigurationBundle;
 
   /** Monaco editor options (passed through to Monaco) */
   monacoOptions?: monaco.editor.IStandaloneEditorConstructionOptions;
 
-  /** Enable configuration persistence in localStorage */
-  enablePersistence?: boolean;
+  /** Enable content persistence in localStorage (default: true) */
+  enableContentPersistence?: boolean;
 
-  /** Auto-load configuration on initialization */
-  autoLoadConfiguration?: boolean;
+  /** localStorage key for content persistence (default: auto-generated from page URL) */
+  storageKey?: string;
 }
 ```
 
@@ -49,23 +46,26 @@ Promise<PhpScriptEditor>
 
 **Errors**:
 - `EditorInitializationError` - When container element is invalid or Monaco fails to load
-- `ConfigurationLoadError` - When configuration loading fails (if autoLoadConfiguration=true)
+- `ConfigurationValidationError` - When configuration bundle validation fails
 
 **Example Usage**:
 ```typescript
-// TypeScript
+// TypeScript - Configuration from server-side rendering
 import { createPhpScriptEditor } from 'php-script-monaco-editor';
+
+// Server-side PHP embeds configuration in HTML:
+// <script>
+//   window.phpScriptEditorConfig = { ... };
+//   window.phpScriptInitialContent = "user.name";
+// </script>
 
 const editor = await createPhpScriptEditor(
   document.getElementById('editor-container'),
   {
-    value: 'user.name',
+    configuration: window.phpScriptEditorConfig,  // From server-side rendering
+    initialValue: window.phpScriptInitialContent, // From server (may be overridden by localStorage)
     theme: 'vs-dark',
-    autoLoadConfiguration: true,
-    configurationLoader: async () => {
-      const response = await fetch('/api/editor-config');
-      return response.json();
-    }
+    enableContentPersistence: true // Auto-save to localStorage
   }
 );
 
@@ -74,75 +74,115 @@ const { createPhpScriptEditor } = require('php-script-monaco-editor');
 
 createPhpScriptEditor(
   document.getElementById('editor-container'),
-  { value: 'user.name', theme: 'vs-dark' }
+  {
+    configuration: window.phpScriptEditorConfig,
+    initialValue: window.phpScriptInitialContent,
+    theme: 'vs-dark'
+  }
 ).then(editor => {
-  console.log('Editor ready');
+  console.log('Editor ready, content auto-saves to localStorage');
 });
 ```
 
 ---
 
-## 2. Configuration Management API
-
-### `PhpScriptEditor.loadConfiguration(bundle)`
-
-Load and apply a configuration bundle to the editor.
-
-**Parameters**:
-```typescript
-loadConfiguration(bundle: ConfigurationBundle): Promise<void>
-```
-
-**Returns**: Promise that resolves when configuration is applied
-
-**Errors**:
-- `ConfigurationValidationError` - When bundle validation fails
-- `ConfigurationApplicationError` - When Monaco registration fails
-
-**Example**:
-```typescript
-const config = await fetch('/api/editor-config').then(r => r.json());
-await editor.loadConfiguration(config);
-```
-
----
+## 2. Content Persistence API
 
 ### `PhpScriptEditor.getConfiguration()`
 
-Get the currently loaded configuration bundle.
+Get the currently loaded configuration bundle that was provided during initialization.
 
 **Returns**:
 ```typescript
-getConfiguration(): ConfigurationBundle | null
+getConfiguration(): ConfigurationBundle
 ```
 
 **Example**:
 ```typescript
 const currentConfig = editor.getConfiguration();
-if (currentConfig) {
-  console.log('Loaded version:', currentConfig.bundleVersion);
+console.log('Loaded version:', currentConfig.bundleVersion);
+```
+
+---
+
+### `PhpScriptEditor.revertToOriginal()`
+
+Discard locally saved content and restore the server-provided initial content.
+
+**Returns**:
+```typescript
+revertToOriginal(): void
+```
+
+**Behavior**:
+- Clears localStorage entry for this editor instance
+- Restores the `initialValue` provided during editor initialization
+- Triggers content change event
+
+**Example**:
+```typescript
+// User wants to discard local changes
+editor.revertToOriginal();
+console.log('Reverted to server-provided content');
+```
+
+---
+
+### `PhpScriptEditor.hasUnsavedChanges()`
+
+Check if current editor content differs from the server-provided initial content.
+
+**Returns**:
+```typescript
+hasUnsavedChanges(): boolean
+```
+
+**Example**:
+```typescript
+if (editor.hasUnsavedChanges()) {
+  const confirm = window.confirm('You have unsaved changes. Continue?');
+  if (confirm) {
+    editor.revertToOriginal();
+  }
 }
 ```
 
 ---
 
-### `PhpScriptEditor.reloadConfiguration()`
+### `PhpScriptEditor.clearLocalStorage()`
 
-Reload configuration from the configured loader or cache.
+Manually clear the localStorage entry for this editor without changing editor content.
 
 **Returns**:
 ```typescript
-reloadConfiguration(): Promise<void>
+clearLocalStorage(): void
 ```
 
-**Errors**:
-- `ConfigurationLoadError` - When no loader configured and cache is empty
-- `ConfigurationValidationError` - When reloaded configuration is invalid
+**Use Case**: Clear persisted content without reverting editor (e.g., before saving to server)
 
 **Example**:
 ```typescript
-// Reload after server-side configuration update
-await editor.reloadConfiguration();
+// After successfully saving to server
+await saveToServer(editor.getValue());
+editor.clearLocalStorage(); // Clear local cache
+```
+
+---
+
+### `PhpScriptEditor.getOriginalContent()`
+
+Get the server-provided initial content (before any user edits).
+
+**Returns**:
+```typescript
+getOriginalContent(): string
+```
+
+**Example**:
+```typescript
+const original = editor.getOriginalContent();
+const current = editor.getValue();
+console.log('Content changed:', original !== current);
 ```
 
 ---
@@ -325,17 +365,23 @@ interface PhpScriptEditor {
   /** Get current editor value */
   getValue(): string;
 
-  /** Set editor value */
+  /** Set editor value (also updates localStorage if persistence enabled) */
   setValue(value: string): void;
 
-  /** Load configuration bundle */
-  loadConfiguration(bundle: ConfigurationBundle): Promise<void>;
+  /** Get current configuration bundle */
+  getConfiguration(): ConfigurationBundle;
 
-  /** Get current configuration */
-  getConfiguration(): ConfigurationBundle | null;
+  /** Revert to server-provided initial content (discards localStorage) */
+  revertToOriginal(): void;
 
-  /** Reload configuration from loader or cache */
-  reloadConfiguration(): Promise<void>;
+  /** Check if content differs from server-provided initial value */
+  hasUnsavedChanges(): boolean;
+
+  /** Clear localStorage without changing editor content */
+  clearLocalStorage(): void;
+
+  /** Get server-provided initial content */
+  getOriginalContent(): string;
 
   /** Update function whitelist (partial update) */
   updateFunctionWhitelist(functions: FunctionDefinition[]): void;
@@ -351,6 +397,9 @@ interface PhpScriptEditor {
 
   /** Event emitter for validation errors */
   onValidationError(listener: (error: EditorError) => void): monaco.IDisposable;
+
+  /** Event emitter for content persistence events */
+  onContentPersisted(listener: (content: string) => void): monaco.IDisposable;
 }
 ```
 
@@ -368,10 +417,6 @@ class EditorInitializationError extends EditorError {
   code: 'EDITOR_INIT_FAILED';
 }
 
-class ConfigurationLoadError extends EditorError {
-  code: 'CONFIG_LOAD_FAILED';
-}
-
 class ConfigurationValidationError extends EditorError {
   code: 'CONFIG_VALIDATION_FAILED';
   details: {
@@ -383,6 +428,14 @@ class ConfigurationValidationError extends EditorError {
 
 class ConfigurationApplicationError extends EditorError {
   code: 'CONFIG_APPLICATION_FAILED';
+}
+
+class ContentPersistenceError extends EditorError {
+  code: 'CONTENT_PERSISTENCE_FAILED';
+  details: {
+    reason: 'QUOTA_EXCEEDED' | 'STORAGE_UNAVAILABLE' | 'CORRUPTED_DATA';
+    storageKey: string;
+  };
 }
 ```
 
@@ -418,28 +471,6 @@ if (!result.valid) {
 
 ---
 
-### `loadConfigurationFromURL(url)`
-
-Helper to load configuration from a remote URL.
-
-```typescript
-function loadConfigurationFromURL(
-  url: string,
-  options?: RequestInit
-): Promise<ConfigurationBundle>
-```
-
-**Example**:
-```typescript
-import { loadConfigurationFromURL } from 'php-script-monaco-editor';
-
-const config = await loadConfigurationFromURL('/api/editor-config', {
-  headers: { 'Authorization': 'Bearer token' }
-});
-```
-
----
-
 ## 7. Advanced Configuration API
 
 ### Partial Configuration Updates
@@ -461,43 +492,68 @@ interface PhpScriptEditor {
 
 ---
 
-## 8. Server-Side Integration Contract
+## 8. Server-Side Rendering Contract
 
-Expected server endpoint structure for configuration delivery.
+Expected structure for server-side PHP to embed configuration in HTML.
 
-### GET /api/editor-config
+### Server-Side PHP Example
 
-**Response**: `ConfigurationBundle` (JSON)
+PHP backend should embed configuration bundle as a JavaScript object in the HTML page:
 
-**Headers**:
-- `Content-Type: application/json`
-- `Cache-Control: public, max-age=3600` (optional, for caching)
-- `ETag: "<bundle-version>"` (optional, for conditional requests)
+```php
+<?php
+// Generate configuration bundle
+$configBundle = [
+    'languageDefinition' => $monarchDefinition,
+    'functionWhitelist' => $whitelist,
+    'contextSchema' => $contextSchema,
+    'bundleVersion' => '1.0.0',
+    'compatibility' => [
+        'minEditorVersion' => '1.0.0',
+        'phpScriptEngine' => '2.5.0'
+    ],
+    'metadata' => [
+        'generatedAt' => date('c'),
+        'generatedBy' => 'php-script-engine',
+        'environment' => getenv('APP_ENV')
+    ]
+];
 
-**Example Response**:
-```json
-{
-  "bundleVersion": "1.2.3",
-  "languageDefinition": { ... },
-  "functionWhitelist": { ... },
-  "contextSchema": { ... },
-  "compatibility": {
-    "minEditorVersion": "1.0.0",
-    "maxEditorVersion": null,
-    "phpScriptEngine": "2.5.0"
-  },
-  "metadata": {
-    "generatedAt": "2025-11-16T10:30:00Z",
-    "generatedBy": "php-script-engine",
-    "environment": "production"
-  }
-}
+$initialContent = 'user.name'; // Optional server-provided content
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PHP-Script Editor</title>
+    <script>
+        // Embed configuration in window object
+        window.phpScriptEditorConfig = <?= json_encode($configBundle, JSON_PRETTY_PRINT) ?>;
+        window.phpScriptInitialContent = <?= json_encode($initialContent) ?>;
+    </script>
+</head>
+<body>
+    <div id="editor-container"></div>
+    <script type="module">
+        import { createPhpScriptEditor } from 'php-script-monaco-editor';
+
+        const editor = await createPhpScriptEditor(
+            document.getElementById('editor-container'),
+            {
+                configuration: window.phpScriptEditorConfig,
+                initialValue: window.phpScriptInitialContent,
+                theme: 'vs-dark'
+            }
+        );
+    </script>
+</body>
+</html>
 ```
 
-**Error Responses**:
-- `404 Not Found` - Configuration not available
-- `500 Internal Server Error` - Configuration generation failed
-- `503 Service Unavailable` - Configuration service temporarily unavailable
+**Key Requirements**:
+- Configuration MUST be embedded as a JavaScript object in the HTML page
+- Configuration MUST NOT be fetched via AJAX
+- Configuration bundle MUST contain all three components (language, whitelist, schema)
+- Initial content is optional and can be overridden by localStorage
 
 ---
 
@@ -525,21 +581,27 @@ const editor = monaco.editor.create(container, {
 });
 ```
 
-**After** (php-script-monaco-editor):
+**After** (php-script-monaco-editor with SSR):
 ```typescript
 import { createPhpScriptEditor } from 'php-script-monaco-editor';
 
+// Server-side PHP embeds configuration in HTML:
+// <script>
+//   window.phpScriptEditorConfig = { ... };
+//   window.phpScriptInitialContent = "user.name";
+// </script>
+
 const editor = await createPhpScriptEditor(container, {
-  value: 'user.name',
-  configurationLoader: async () => {
-    const res = await fetch('/api/editor-config');
-    return res.json();
-  }
+  configuration: window.phpScriptEditorConfig,  // From server-side rendering
+  initialValue: window.phpScriptInitialContent, // From server (or localStorage)
+  theme: 'vs-dark'
 });
 ```
 
 **Benefits**:
 - Automatic php-script language registration
-- Pre-configured completion providers
+- Pre-configured completion providers for whitelisted functions and context variables
 - Built-in configuration validation
+- Automatic content persistence to localStorage
 - Type-safe API
+- No AJAX requests needed (faster initialization)
