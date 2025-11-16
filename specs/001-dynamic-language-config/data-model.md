@@ -36,11 +36,11 @@ Represents the Monarch language definition for php-script syntax, generated serv
 - All RegExp patterns MUST be valid JavaScript regular expressions
 
 **State Transitions**:
-- `unloaded` → `loading` (when fetch begins)
-- `loading` → `loaded` (when definition parsed successfully)
-- `loading` → `error` (when parsing fails or network error)
-- `loaded` → `registered` (when Monaco language is registered)
-- `error` → `loading` (on retry)
+- `unloaded` → `parsing` (when reading from server-rendered JavaScript object)
+- `parsing` → `parsed` (when definition validated successfully)
+- `parsing` → `error` (when parsing/validation fails)
+- `parsed` → `registered` (when Monaco language is registered)
+- `error` → `fallback` (use minimal syntax highlighting)
 
 ---
 
@@ -50,11 +50,10 @@ List of PHP functions approved for use in the php-script runtime environment.
 
 **Attributes**:
 - `functions`: FunctionDefinition[] - Array of whitelisted function definitions
-- `version`: string - Whitelist version for cache invalidation (semver format)
-- `namespace`: string - Optional namespace for function organization (default: "global")
 
 **FunctionDefinition**:
 - `name`: string - Function name (e.g., "strlen", "substr")
+- `namespace`: string - Optional namespace for function organization (default: "")
 - `signature`: FunctionSignature - Function signature for code completion
   - `parameters`: Parameter[] - Function parameters
     - `name`: string - Parameter name
@@ -70,7 +69,6 @@ List of PHP functions approved for use in the php-script runtime environment.
 **Validation Rules**:
 - `functions` MUST NOT contain duplicate function names within the same namespace
 - Each function `name` MUST match pattern `^[a-zA-Z_][a-zA-Z0-9_]*$`
-- `version` MUST be valid semver (e.g., "1.2.3")
 - Parameter names MUST be unique within a function signature
 - Optional parameters MUST come after required parameters
 - Deprecated functions MUST include documentation explaining replacement
@@ -87,8 +85,6 @@ Hierarchical structure defining runtime-available variables and their members.
 
 **Attributes**:
 - `variables`: ContextVariable[] - Top-level context variables
-- `version`: string - Schema version for cache invalidation (semver format)
-- `strict`: boolean - Whether to allow only defined variables (default: true)
 
 **ContextVariable**:
 - `name`: string - Variable name (e.g., "user", "request", "session")
@@ -117,12 +113,11 @@ Hierarchical structure defining runtime-available variables and their members.
 - Array types MUST specify element type (e.g., "array<User>")
 
 **State Transitions**:
-- `unloaded` → `loading` (when schema fetch begins)
-- `loading` → `validating` (when schema received, validation starts)
+- `unloaded` → `validating` (when schema read from server-rendered object, validation starts)
 - `validating` → `validated` (when validation passes)
 - `validating` → `error` (when validation fails - circular refs, duplicate names, etc.)
 - `validated` → `indexed` (when completion index built)
-- `error` → `loading` (on retry)
+- `error` → `fallback` (use empty context schema)
 
 **Relationships**:
 - ContextVariable can nest other ContextVariables via properties (hierarchical)
@@ -158,83 +153,173 @@ Complete editor configuration combining language definition, function whitelist,
 - All component versions (language, whitelist, schema) SHOULD match bundleVersion for consistency
 
 **State Transitions**:
-- `unloaded` → `loading` (when bundle fetch begins)
-- `loading` → `validating` (when bundle received)
+- `unloaded` → `parsing` (when reading from server-rendered JavaScript object)
+- `parsing` → `validating` (when bundle parsed, validation starts)
 - `validating` → `applying` (when all validations pass)
 - `applying` → `applied` (when Monaco configured with all components)
 - `validating` → `error` (when any component validation fails)
 - `applied` → `active` (when editor is ready for use)
-- Any state → `refreshing` (when configuration reload requested)
-- `refreshing` → `validating` (reload cycle restarts validation)
+- `error` → `fallback` (use minimal syntax highlighting mode)
 
 **Relationships**:
 - ConfigurationBundle aggregates LanguageDefinition, FunctionWhitelist, ContextVariableSchema
 - ConfigurationBundle version should increment when any component changes
-- ConfigurationBundle is the unit of persistence (saved to localStorage as complete bundle)
+- ConfigurationBundle is delivered via server-side rendering (NOT cached in localStorage)
 
 ---
 
 ## Data Flow
 
+### Configuration Flow (Server-Side Rendering)
+
 ```
 Server (PHP Engine)
     ├─→ Generates MonarchDefinition (from php-script grammar)
-    ├─→ Exports FunctionWhitelist (from engine whitelist config)
-    └─→ Exports ContextVariableSchema (from runtime context types)
+    ├─→ Generates FunctionWhitelist (from engine whitelist config)
+    ├─→ Generates ContextVariableSchema (from runtime context types)
+    └─→ Generates initial editor content (optional)
            ↓
-    ConfigurationBundle (JSON)
+    Server-Side Rendering (PHP)
+           ├─→ Embeds ConfigurationBundle as JavaScript object in HTML
+           └─→ Embeds initial content value in HTML
            ↓
-    Editor Package (NPM)
+    Browser Loads Page
+           ↓
+    Editor Package (NPM) Initializes
+           ├─→ Reads ConfigurationBundle from window object
            ├─→ Validates Bundle
            ├─→ Registers Language (Monaco API)
            ├─→ Registers Completion Provider (functions + context)
-           └─→ Persists to localStorage (optional)
+           ├─→ Checks localStorage for saved content
+           └─→ Loads content (localStorage wins over server-provided)
            ↓
     Active Editor
            ├─→ Syntax Highlighting (from MonarchDefinition)
            ├─→ Code Completion (from FunctionWhitelist + ContextSchema)
-           └─→ Validation (from LanguageDefinition rules)
+           ├─→ Validation (from LanguageDefinition rules)
+           └─→ Auto-save content to localStorage on changes
 ```
+
+### Content Persistence Flow
+
+```
+User Types in Editor
+           ↓
+    Content Changes
+           ↓
+    EditorContent.save() triggered (debounced)
+           ↓
+    localStorage.setItem(storageKey, content)
+           ↓
+    [Page Reload / Browser Crash]
+           ↓
+    Editor Initializes
+           ↓
+    Check localStorage for saved content
+           ↓
+    If found: Load from localStorage (ignores server content)
+    If not found: Load from server-provided initial content
+           ↓
+    User can call revertToOriginal() to discard local changes
+```
+
+---
+
+### EditorContent
+
+Represents the user's code/text content in the editor, persisted to localStorage to prevent data loss.
+
+**Attributes**:
+- `content`: string - The actual code/text content in the editor
+- `storageKey`: string - localStorage key (derived from editor instance ID or page URL)
+- `timestamp`: number - Unix timestamp when content was last saved
+- `originalContent`: string - Server-provided initial content (for revert functionality)
+
+**Validation Rules**:
+- `content` MUST be a string (can be empty)
+- `storageKey` MUST be unique per editor instance to avoid conflicts
+- `content` size SHOULD NOT exceed 5MB (localStorage limitation)
+- `timestamp` MUST be valid Unix timestamp in milliseconds
+
+**State Transitions**:
+- `empty` → `typing` (when user starts typing)
+- `typing` → `saving` (debounced save triggered)
+- `saving` → `saved` (localStorage write successful)
+- `saving` → `error` (localStorage write failed - quota exceeded)
+- `saved` → `typing` (user continues typing)
+- `saved` → `reverting` (user calls revertToOriginal())
+- `reverting` → `reverted` (localStorage cleared, original content restored)
+
+**Relationships**:
+- EditorContent is independent of ConfigurationBundle
+- EditorContent.originalContent comes from server-side rendering
+- EditorContent.content is stored in localStorage (ConfigurationBundle is NOT)
+
+**Persistence Behavior**:
+- **Priority**: localStorage content > server-provided initial content
+- **Auto-save**: Content saved to localStorage on every change (debounced 500ms)
+- **Restore**: On page load, check localStorage first before using server content
+- **Revert**: API method clears localStorage and restores originalContent
+- **Quota handling**: If localStorage full, warn user but continue editing (no persistence)
+
+---
 
 ## Persistence Strategy
 
-**Browser Storage** (optional feature):
-- ConfigurationBundle stored in `localStorage` keyed by `bundleVersion`
-- Maximum 3 most recent bundles retained (LRU eviction)
-- Storage quota check before persisting (fail gracefully if quota exceeded)
-- Persisted bundle includes `cachedAt` timestamp for staleness detection
+**Editor Content Storage** (localStorage):
+- Editor content stored in `localStorage` keyed by `storageKey` (unique per editor instance)
+- Storage key format: `php-script-editor-content-{instanceId}` or `php-script-editor-content-{pageURL}`
+- Content auto-saved on every change (debounced 500ms to avoid excessive writes)
+- localStorage content ALWAYS takes precedence over server-provided initial content
+- No expiration or cache invalidation (content persists until manually cleared or reverted)
 
-**Cache Invalidation**:
-- Bundle reloaded if `bundleVersion` changes
-- Stale if `cachedAt` older than 24 hours (configurable)
-- Manual refresh API available for forced reload
+**Storage Quota Management**:
+- Check available storage before each save
+- If quota exceeded, show warning but continue editing (graceful degradation)
+- Corrupted data is detected and discarded (fall back to server content)
+
+**Revert Functionality**:
+- `revertToOriginal()` API method clears localStorage entry
+- Restores server-provided `originalContent`
+- Provides "reset to default" capability for users
 
 ## Error Handling
 
-**Configuration Errors**:
-- Malformed JSON → Clear error with line/column info
+**Configuration Errors** (from server-rendered object):
+- Malformed JavaScript object → Clear error with field path
 - Invalid schema → Validation error with specific field path
-- Circular references → Error with cycle path
-- Network errors → Retry with exponential backoff (max 3 attempts)
+- Circular references in context variables → Error with cycle path, fall back to minimal mode
 
 **Runtime Errors**:
 - Missing configuration → Fall back to minimal syntax highlighting (keywords only)
 - Partial configuration → Apply what's valid, warn about invalid parts
 - Version mismatch → Warn but attempt to use, log compatibility issues
 
+**Content Persistence Errors**:
+- localStorage quota exceeded → Warn user, continue editing without persistence
+- localStorage corrupted data → Discard corrupted entry, fall back to server content
+- localStorage unavailable → Continue editing without persistence (graceful degradation)
+- Concurrent tab conflicts → Last write wins (by design)
+
 ## Performance Considerations
 
-**Lazy Loading**:
-- LanguageDefinition loaded on first editor instantiation
-- FunctionWhitelist loaded when first completion requested
-- ContextVariableSchema loaded when context variable detected
+**Configuration Loading** (server-side rendering):
+- Configuration available immediately (embedded in HTML)
+- No network round-trip delay
+- Parsing happens synchronously during editor initialization
+- Target: <200ms to parse and validate configuration bundle
 
 **Indexing**:
 - Build completion index from ContextVariableSchema on load (one-time cost)
 - Index nested properties up to 10 levels deep
 - Index stored in memory for O(1) lookup during completion
 
+**Content Persistence**:
+- Debounced saves (500ms) to avoid excessive localStorage writes
+- localStorage read is synchronous but fast (<10ms for typical content)
+- Content size should stay under 5MB for optimal performance
+
 **Bundle Size**:
 - Typical sizes: Language 10-20KB, Whitelist 5-15KB, Schema 10-50KB
-- Total bundle target: <100KB compressed
-- Compression: gzip on server, browser auto-decompresses
+- Total bundle target: <100KB (embedded in HTML, no compression needed for small sizes)
+- Configuration is inline JavaScript, no separate download required
