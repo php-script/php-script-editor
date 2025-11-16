@@ -169,14 +169,14 @@ Single NPM package project structure:
 
 **Purpose**: Enable server-side configuration delivery and public API
 
-- [ ] T060 [P] Implement createPhpScriptEditor factory function in src/index.ts
-- [ ] T061 [P] Implement PhpScriptEditor class with complete API surface in src/editor.ts
-- [ ] T062 [P] Add getConfiguration(), updateFunctionWhitelist(), updateContextSchema() methods
-- [ ] T063 [P] Add revertToOriginal(), hasUnsavedChanges(), clearLocalStorage(), getOriginalContent() methods
-- [ ] T064 [P] Implement configuration change event emitters (onConfigurationChanged, onValidationError, onContentPersisted)
-- [ ] T065 [P] Add validateConfigurationBundle() utility function in src/config/validator.ts
-- [ ] T066 Add comprehensive JSDoc documentation for all public APIs
-- [ ] T067 Create TypeScript declaration files (.d.ts) for type exports
+- [X] T060 [P] Implement createPhpScriptEditor factory function in src/index.ts
+- [X] T061 [P] Implement PhpScriptEditor class with complete API surface in src/editor.ts
+- [X] T062 [P] Add getConfiguration(), updateFunctionWhitelist(), updateContextSchema() methods
+- [X] T063 [P] Add revertToOriginal(), hasUnsavedChanges(), clearLocalStorage(), getOriginalContent() methods
+- [X] T064 [P] Implement configuration change event emitters (onConfigurationChanged, onValidationError, onContentPersisted)
+- [X] T065 [P] Add validateConfigurationBundle() utility function in src/config/validator.ts
+- [X] T066 Add comprehensive JSDoc documentation for all public APIs
+- [X] T067 Create TypeScript declaration files (.d.ts) for type exports
 
 ---
 

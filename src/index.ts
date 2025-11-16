@@ -5,7 +5,13 @@
 
 // Editor creation and configuration
 export { createPhpScriptEditor, setupMonacoWorkers } from './editor';
-export type { CreateEditorOptions, PhpScriptEditor } from './editor';
+export type {
+  CreateEditorOptions,
+  PhpScriptEditor,
+  ConfigurationChangedCallback,
+  ValidationErrorCallback,
+  ContentPersistedCallback,
+} from './editor';
 
 // Configuration types
 export type {

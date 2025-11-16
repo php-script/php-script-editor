@@ -30,61 +30,374 @@ import { AUTOSAVE_DEBOUNCE_MS } from './config/defaults';
 
 /**
  * Editor creation options
+ *
+ * Configuration object for initializing a php-script Monaco Editor instance.
+ * All options except `configuration` are optional and have sensible defaults.
+ *
+ * @example
+ * ```typescript
+ * const options: CreateEditorOptions = {
+ *   initialValue: 'user.name',
+ *   theme: 'vs-dark',
+ *   configuration: window.phpScriptConfig, // From server
+ *   enableContentPersistence: true,
+ *   monacoOptions: {
+ *     minimap: { enabled: false },
+ *     fontSize: 14
+ *   }
+ * };
+ * ```
  */
 export interface CreateEditorOptions {
-  /** Server-provided initial code content (can be overridden by localStorage) */
+  /**
+   * Server-provided initial code content
+   *
+   * This value can be overridden by localStorage if persistence is enabled
+   * and the user has previously edited content on this page.
+   *
+   * @default ''
+   */
   initialValue?: string;
 
-  /** Editor theme (default: 'vs-dark') */
+  /**
+   * Editor color theme
+   *
+   * @default 'vs-dark'
+   */
   theme?: 'vs' | 'vs-dark' | 'hc-black' | string;
 
-  /** Configuration bundle from server-side rendering (embedded in window object) */
+  /**
+   * Configuration bundle from server-side rendering
+   *
+   * This object should be embedded in the HTML via a script tag during
+   * server-side rendering. It contains language definitions, function
+   * whitelists, and context variable schemas.
+   *
+   * @example
+   * ```html
+   * <script>
+   *   window.phpScriptConfig = <?php echo json_encode($config); ?>;
+   * </script>
+   * ```
+   */
   configuration: ConfigurationBundle;
 
-  /** Monaco editor options (passed through to Monaco) */
+  /**
+   * Monaco editor construction options
+   *
+   * These options are passed directly to Monaco's `create()` method.
+   * See Monaco Editor documentation for available options.
+   *
+   * @see https://microsoft.github.io/monaco-editor/docs.html
+   */
   monacoOptions?: monaco.editor.IStandaloneEditorConstructionOptions;
 
-  /** Enable content persistence in localStorage (default: true) */
+  /**
+   * Enable automatic content persistence to localStorage
+   *
+   * When enabled, editor content is auto-saved to localStorage every 500ms
+   * after the last keystroke. On page reload, localStorage content takes
+   * precedence over server-provided `initialValue`.
+   *
+   * @default true
+   */
   enableContentPersistence?: boolean;
 
-  /** localStorage key for content persistence (default: auto-generated from page URL) */
+  /**
+   * localStorage key for content persistence
+   *
+   * If not provided, a key is auto-generated from the current page URL.
+   * Use a custom key when you have multiple editors on the same page.
+   *
+   * @default Auto-generated from URL hash
+   */
   storageKey?: string;
 }
 
 /**
- * PHP-Script Editor instance
+ * Event callback types for editor events
+ */
+
+/**
+ * Callback invoked when editor configuration is updated
+ *
+ * @param config - The new configuration bundle
+ */
+export type ConfigurationChangedCallback = (config: ConfigurationBundle) => void;
+
+/**
+ * Callback invoked when validation errors occur
+ *
+ * @param errors - Array of error messages
+ */
+export type ValidationErrorCallback = (errors: string[]) => void;
+
+/**
+ * Callback invoked when content is persisted to localStorage
+ *
+ * @param storageKey - The localStorage key used
+ * @param contentLength - Size of persisted content in characters
+ */
+export type ContentPersistedCallback = (storageKey: string, contentLength: number) => void;
+
+/**
+ * PHP-Script Editor instance with full API surface
+ *
+ * Provides methods for content management, configuration updates, persistence control,
+ * and event subscriptions. Automatically saves content to localStorage and provides
+ * language-aware code completion.
+ *
+ * @example
+ * ```typescript
+ * const editor = await createPhpScriptEditor(container, options);
+ *
+ * // Get/set content
+ * const code = editor.getValue();
+ * editor.setValue('user.email');
+ *
+ * // Update configuration dynamically
+ * editor.updateFunctionWhitelist(newWhitelist);
+ * editor.updateContextSchema(newSchema);
+ *
+ * // Listen to events
+ * editor.onContentPersisted((key, length) => {
+ *   console.log(`Saved ${length} bytes`);
+ * });
+ *
+ * // Check for unsaved changes
+ * if (editor.hasUnsavedChanges()) {
+ *   editor.revertToOriginal();
+ * }
+ *
+ * // Cleanup
+ * editor.dispose();
+ * ```
  */
 export interface PhpScriptEditor {
-  /** Underlying Monaco editor instance */
+  /**
+   * Underlying Monaco editor instance
+   *
+   * Direct access to the Monaco editor for advanced use cases.
+   * Use this to access Monaco-specific features not exposed by the wrapper API.
+   *
+   * @example
+   * ```typescript
+   * // Get cursor position
+   * const position = editor.monaco.getPosition();
+   *
+   * // Add custom action
+   * editor.monaco.addAction({
+   *   id: 'my-action',
+   *   label: 'My Action',
+   *   run: () => console.log('Action triggered')
+   * });
+   * ```
+   */
   readonly monaco: monaco.editor.IStandaloneCodeEditor;
 
-  /** Get current editor value */
+  // === Content Management ===
+
+  /**
+   * Get current editor content
+   *
+   * @returns The complete text content of the editor
+   */
   getValue(): string;
 
-  /** Set editor value (also updates localStorage if persistence enabled) */
+  /**
+   * Set editor content
+   *
+   * Updates the editor with new content. If persistence is enabled,
+   * this will trigger auto-save after the debounce delay (500ms).
+   *
+   * @param value - New content to set in the editor
+   */
   setValue(value: string): void;
 
-  /** Get current configuration bundle */
+  // === Configuration Management ===
+
+  /**
+   * Get current configuration bundle
+   *
+   * Returns the active configuration including language definition,
+   * function whitelist, and context schema.
+   *
+   * @returns Current configuration bundle
+   */
   getConfiguration(): ConfigurationBundle;
 
-  /** Revert to server-provided initial content (discards localStorage) */
+  /**
+   * Update function whitelist dynamically
+   *
+   * Re-registers completion, hover, and diagnostic providers with the new whitelist.
+   * Preserves existing context schema if present. Triggers `onConfigurationChanged` event.
+   *
+   * @param whitelist - New function whitelist configuration
+   *
+   * @example
+   * ```typescript
+   * editor.updateFunctionWhitelist({
+   *   functions: [
+   *     { name: 'newFunction', description: 'New function', category: 'string' }
+   *   ],
+   *   version: '2.0.0',
+   *   namespace: 'global'
+   * });
+   * ```
+   */
+  updateFunctionWhitelist(whitelist: import('./config/types').FunctionWhitelist): void;
+
+  /**
+   * Update context variable schema dynamically
+   *
+   * Re-registers context completion provider with the new schema.
+   * Preserves existing function whitelist if present. Triggers `onConfigurationChanged` event.
+   *
+   * @param schema - New context variable schema
+   *
+   * @example
+   * ```typescript
+   * editor.updateContextSchema({
+   *   variables: [
+   *     { name: 'user', type: 'object', description: 'Current user', properties: [] }
+   *   ],
+   *   version: '2.0.0',
+   *   strict: true
+   * });
+   * ```
+   */
+  updateContextSchema(schema: import('./config/types').ContextVariableSchema): void;
+
+  // === Content Persistence ===
+
+  /**
+   * Revert to server-provided initial content
+   *
+   * Clears localStorage and restores the original content from server.
+   * Useful for implementing a "Reset" or "Discard Changes" button.
+   *
+   * @example
+   * ```typescript
+   * if (editor.hasUnsavedChanges()) {
+   *   if (confirm('Discard all changes?')) {
+   *     editor.revertToOriginal();
+   *   }
+   * }
+   * ```
+   */
   revertToOriginal(): void;
 
-  /** Check if content differs from server-provided initial value */
+  /**
+   * Check if editor content differs from original
+   *
+   * Compares current content against the server-provided initial value.
+   * Returns `false` if persistence is disabled.
+   *
+   * @returns `true` if content has been modified, `false` otherwise
+   */
   hasUnsavedChanges(): boolean;
 
-  /** Clear localStorage without changing editor content */
+  /**
+   * Clear localStorage without changing editor content
+   *
+   * Removes persisted content from localStorage but keeps the current
+   * editor content unchanged. Useful for manual cache clearing.
+   */
   clearLocalStorage(): void;
 
-  /** Get server-provided initial content */
+  /**
+   * Get server-provided initial content
+   *
+   * Returns the original content from server, not the current editor content.
+   * Useful for implementing diff/comparison views.
+   *
+   * @returns Original content from server
+   */
   getOriginalContent(): string;
 
-  /** Dispose editor and cleanup resources */
+  // === Event Listeners ===
+
+  /**
+   * Subscribe to configuration change events
+   *
+   * Invoked when configuration is updated via `updateFunctionWhitelist()`
+   * or `updateContextSchema()`.
+   *
+   * @param callback - Function to call when configuration changes
+   *
+   * @example
+   * ```typescript
+   * editor.onConfigurationChanged((config) => {
+   *   console.log('Config updated:', config.bundleVersion);
+   * });
+   * ```
+   */
+  onConfigurationChanged(callback: ConfigurationChangedCallback): void;
+
+  /**
+   * Subscribe to validation error events
+   *
+   * Invoked when storage quota is exceeded or other validation errors occur.
+   *
+   * @param callback - Function to call when validation errors occur
+   *
+   * @example
+   * ```typescript
+   * editor.onValidationError((errors) => {
+   *   alert('Error: ' + errors.join(', '));
+   * });
+   * ```
+   */
+  onValidationError(callback: ValidationErrorCallback): void;
+
+  /**
+   * Subscribe to content persisted events
+   *
+   * Invoked after content is successfully saved to localStorage (debounced 500ms).
+   *
+   * @param callback - Function to call when content is persisted
+   *
+   * @example
+   * ```typescript
+   * editor.onContentPersisted((key, length) => {
+   *   document.getElementById('status').textContent = `Saved ${length} bytes`;
+   * });
+   * ```
+   */
+  onContentPersisted(callback: ContentPersistedCallback): void;
+
+  // === Lifecycle ===
+
+  /**
+   * Dispose editor and cleanup resources
+   *
+   * Cleans up Monaco editor instance, language providers, event listeners,
+   * and auto-save timers. Call this when removing the editor from the DOM.
+   *
+   * @example
+   * ```typescript
+   * // Cleanup when component unmounts
+   * useEffect(() => {
+   *   return () => editor.dispose();
+   * }, [editor]);
+   * ```
+   */
   dispose(): void;
 }
 
 /**
  * Setup Monaco Environment for web workers
+ *
+ * Configures the Monaco Editor's web worker system for syntax highlighting,
+ * IntelliSense, and other background processing tasks.
+ *
+ * @example
+ * ```typescript
+ * import { setupMonacoWorkers } from 'php-script-monaco-editor';
+ *
+ * // Call before creating any editors
+ * setupMonacoWorkers();
+ * ```
  */
 export function setupMonacoWorkers(): void {
   if (typeof window !== 'undefined') {
@@ -110,6 +423,43 @@ export function setupMonacoWorkers(): void {
 
 /**
  * Create and initialize a php-script Monaco Editor
+ *
+ * Creates a fully-configured Monaco Editor instance for editing php-script language code.
+ * Automatically registers language providers, sets up content persistence, and configures
+ * completion providers based on the provided configuration bundle.
+ *
+ * @param container - DOM element to host the editor
+ * @param options - Editor configuration options
+ * @returns Promise resolving to a PhpScriptEditor instance
+ *
+ * @throws {EditorInitializationError} If container is missing or configuration is invalid
+ *
+ * @example
+ * ```typescript
+ * import { createPhpScriptEditor } from 'php-script-monaco-editor';
+ *
+ * // Get configuration from server-rendered script tag
+ * const config = window.phpScriptConfig;
+ *
+ * const editor = await createPhpScriptEditor(
+ *   document.getElementById('editor-container'),
+ *   {
+ *     initialValue: '<?php echo "Hello"; ?>',
+ *     theme: 'vs-dark',
+ *     configuration: config,
+ *     enableContentPersistence: true
+ *   }
+ * );
+ *
+ * // Listen to events
+ * editor.onConfigurationChanged((config) => {
+ *   console.log('Configuration updated:', config);
+ * });
+ *
+ * editor.onContentPersisted((key, length) => {
+ *   console.log(`Saved ${length} bytes to ${key}`);
+ * });
+ * ```
  */
 export async function createPhpScriptEditor(
   container: HTMLElement,
@@ -211,6 +561,14 @@ export async function createPhpScriptEditor(
     ...options.monacoOptions,
   });
 
+  // Setup event callbacks
+  const configurationChangedCallbacks: ConfigurationChangedCallback[] = [];
+  const validationErrorCallbacks: ValidationErrorCallback[] = [];
+  const contentPersistedCallbacks: ContentPersistedCallback[] = [];
+
+  // Track current configuration (mutable for updates)
+  let currentConfiguration = options.configuration;
+
   // Setup debounced auto-save
   let autoSaveTimeout: ReturnType<typeof setTimeout> | null = null;
   let contentChangeListener: monaco.IDisposable | null = null;
@@ -247,10 +605,26 @@ export async function createPhpScriptEditor(
             storageKey,
             contentLength: currentContent.length,
           });
+
+          // Emit content persisted event
+          contentPersistedCallbacks.forEach((callback) => {
+            try {
+              callback(storageKey, currentContent.length);
+            } catch (error) {
+              logger.error('Error in onContentPersisted callback', { error });
+            }
+          });
         } catch (error) {
           if (error instanceof ContentPersistenceError && error.code === 'QUOTA_EXCEEDED') {
             logger.error('Storage quota exceeded during save', { storageKey, error });
-            // Could emit an event here for UI notification
+            // Emit validation error event
+            validationErrorCallbacks.forEach((callback) => {
+              try {
+                callback(['Storage quota exceeded. Cannot save editor content.']);
+              } catch (cbError) {
+                logger.error('Error in onValidationError callback', { error: cbError });
+              }
+            });
           } else {
             logger.error('Failed to auto-save content', { storageKey, error });
           }
@@ -266,7 +640,99 @@ export async function createPhpScriptEditor(
       editor.setValue(value);
       // Auto-save will be triggered by onDidChangeModelContent
     },
-    getConfiguration: () => options.configuration,
+    getConfiguration: () => currentConfiguration,
+    updateFunctionWhitelist: (whitelist) => {
+      logger.info('Updating function whitelist', {
+        functionCount: whitelist.functions.length,
+      });
+
+      // Update configuration
+      currentConfiguration = {
+        ...currentConfiguration,
+        functionWhitelist: whitelist,
+      };
+
+      // Re-register providers
+      const newFuncProvider = registerFunctionCompletionProvider('php-script', whitelist);
+      const newHoverProvider = registerHoverProvider('php-script', whitelist);
+      const newDiagnosticProvider = registerDiagnosticProvider('php-script', whitelist);
+
+      // Dispose old providers
+      languageDisposables.forEach((d) => d.dispose());
+      languageDisposables.length = 0;
+
+      // Add new providers
+      languageDisposables.push(newFuncProvider, newHoverProvider, newDiagnosticProvider);
+
+      // Re-add context provider if exists
+      if (currentConfiguration.contextSchema) {
+        const contextProvider = registerContextCompletionProvider(
+          'php-script',
+          currentConfiguration.contextSchema
+        );
+        languageDisposables.push(contextProvider);
+      }
+
+      // Emit configuration changed event
+      configurationChangedCallbacks.forEach((callback) => {
+        try {
+          callback(currentConfiguration);
+        } catch (error) {
+          logger.error('Error in onConfigurationChanged callback', { error });
+        }
+      });
+
+      logger.info('Function whitelist updated successfully');
+    },
+    updateContextSchema: (schema) => {
+      logger.info('Updating context schema', {
+        variableCount: schema.variables.length,
+      });
+
+      // Update configuration
+      currentConfiguration = {
+        ...currentConfiguration,
+        contextSchema: schema,
+      };
+
+      // Re-register providers
+      const contextProvider = registerContextCompletionProvider('php-script', schema);
+
+      // Dispose old providers
+      languageDisposables.forEach((d) => d.dispose());
+      languageDisposables.length = 0;
+
+      // Add new context provider
+      languageDisposables.push(contextProvider);
+
+      // Re-add function providers if exist
+      if (currentConfiguration.functionWhitelist) {
+        const funcProvider = registerFunctionCompletionProvider(
+          'php-script',
+          currentConfiguration.functionWhitelist
+        );
+        const hoverProvider = registerHoverProvider(
+          'php-script',
+          currentConfiguration.functionWhitelist
+        );
+        const diagnosticProvider = registerDiagnosticProvider(
+          'php-script',
+          currentConfiguration.functionWhitelist
+        );
+        languageDisposables.push(funcProvider, hoverProvider, diagnosticProvider);
+      }
+
+      // Emit configuration changed event
+      configurationChangedCallbacks.forEach((callback) => {
+        try {
+          callback(currentConfiguration);
+        } catch (error) {
+          logger.error('Error in onConfigurationChanged callback', { error });
+        }
+      });
+
+      logger.info('Context schema updated successfully');
+    },
     revertToOriginal: () => {
       if (!persistenceEnabled) {
         logger.warn('Content persistence is disabled, cannot revert');
@@ -308,6 +774,18 @@ export async function createPhpScriptEditor(
       }
 
       return loadOriginalContent(storageKey) || originalContent;
+    },
+    onConfigurationChanged: (callback) => {
+      configurationChangedCallbacks.push(callback);
+      logger.debug('Registered onConfigurationChanged callback');
+    },
+    onValidationError: (callback) => {
+      validationErrorCallbacks.push(callback);
+      logger.debug('Registered onValidationError callback');
+    },
+    onContentPersisted: (callback) => {
+      contentPersistedCallbacks.push(callback);
+      logger.debug('Registered onContentPersisted callback');
     },
     dispose: () => {
       // Clear auto-save timeout
