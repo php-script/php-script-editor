@@ -46,13 +46,15 @@ export {
   DEFAULT_EDITOR_OPTIONS,
 } from './config/defaults';
 
-// Error types
+// Error types and utilities
 export {
   EditorError,
   EditorInitializationError,
   ConfigurationValidationError,
   ConfigurationApplicationError,
   ContentPersistenceError,
+  getUserFriendlyErrorMessage,
+  getErrorAdvice,
 } from './utils/errors';
 
 // Logger

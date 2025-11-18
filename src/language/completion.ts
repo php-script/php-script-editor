@@ -11,6 +11,7 @@ import type {
   ContextVariable,
 } from '../config/types';
 import { logger } from '../utils/logger';
+import { MAX_COMPLETION_ITEMS } from '../config/defaults';
 
 /**
  * Completion item with label and documentation
@@ -71,6 +72,11 @@ export function filterWhitelistedFunctions(
   whitelist: FunctionWhitelist,
   prefix: string
 ): FunctionDefinition[] {
+  // Handle empty whitelist gracefully - return empty array
+  if (!whitelist || !whitelist.functions || whitelist.functions.length === 0) {
+    return [];
+  }
+
   const lowerPrefix = prefix.toLowerCase();
 
   if (!prefix) {
@@ -103,10 +109,17 @@ export function registerFunctionCompletionProvider(
   languageId: string,
   whitelist: FunctionWhitelist
 ): monaco.IDisposable {
-  logger.info('Registering function completion provider', {
-    languageId,
-    functionCount: whitelist.functions.length,
-  });
+  // Handle empty whitelist gracefully
+  if (!whitelist || !whitelist.functions || whitelist.functions.length === 0) {
+    logger.info('Function whitelist is empty - no function suggestions will be provided', {
+      languageId,
+    });
+  } else {
+    logger.info('Registering function completion provider', {
+      languageId,
+      functionCount: whitelist.functions.length,
+    });
+  }
 
   return monaco.languages.registerCompletionItemProvider(languageId, {
     provideCompletionItems: (model, position) => {
@@ -210,6 +223,7 @@ function filterContextVariables(
       insertText: v.name,
       documentation: v.documentation,
       detail: v.type.baseType,
+      sortText: '0_' + v.name, // Context variables sort before keywords
     }));
 }
 
@@ -275,41 +289,83 @@ function getContextCompletions(
 ): CompletionItem[] {
   const items: CompletionItem[] = [];
   const lowerPrefix = prefix.toLowerCase();
+  let truncated = false;
+  let totalAvailable = 0;
 
   // Add properties
   if (context.properties) {
+    const filteredProps = context.properties.filter(
+      (p) => !prefix || p.name.toLowerCase().startsWith(lowerPrefix)
+    );
+    totalAvailable += filteredProps.length;
+
+    // Limit properties to prevent UI lag
+    const propsToShow = filteredProps.slice(0, MAX_COMPLETION_ITEMS);
+    if (filteredProps.length > MAX_COMPLETION_ITEMS) {
+      truncated = true;
+    }
+
     items.push(
-      ...context.properties
-        .filter((p) => !prefix || p.name.toLowerCase().startsWith(lowerPrefix))
-        .map((p) => ({
-          label: p.name,
-          kind: p.readonly ? 'Constant' : 'Property',
-          insertText: p.name,
-          documentation: p.documentation,
-          detail: `${p.type.baseType}${p.readonly ? ' (readonly)' : ''}`,
-        }))
+      ...propsToShow.map((p) => ({
+        label: p.name,
+        kind: p.readonly ? 'Constant' : 'Property',
+        insertText: p.name,
+        documentation: p.documentation,
+        detail: `${p.type.baseType}${p.readonly ? ' (readonly)' : ''}`,
+        sortText: '0_' + p.name, // Properties sort before keywords
+      }))
     );
   }
 
-  // Add methods
-  if (context.methods) {
-    items.push(
-      ...context.methods
-        .filter((m) => !prefix || m.name.toLowerCase().startsWith(lowerPrefix))
-        .map((m) => ({
-          label: m.name,
-          kind: 'Method',
-          insertText: `${m.name}()`,
-          documentation: m.documentation,
-          detail: getFunctionSignatureFromMethod(m),
-        }))
+  // Add methods (if we haven't hit the limit yet)
+  if (context.methods && items.length < MAX_COMPLETION_ITEMS) {
+    const filteredMethods = context.methods.filter(
+      (m) => !prefix || m.name.toLowerCase().startsWith(lowerPrefix)
     );
+    totalAvailable += filteredMethods.length;
+
+    const remaining = MAX_COMPLETION_ITEMS - items.length;
+    const methodsToShow = filteredMethods.slice(0, remaining);
+    if (filteredMethods.length > remaining) {
+      truncated = true;
+    }
+
+    items.push(
+      ...methodsToShow.map((m) => ({
+        label: m.name,
+        kind: 'Method',
+        insertText: `${m.name}()`,
+        documentation: m.documentation,
+        detail: getFunctionSignatureFromMethod(m),
+      }))
+    );
+  }
+
+  // Add "more available" indicator if truncated
+  if (truncated) {
+    const hiddenCount = totalAvailable - items.length;
+    items.push({
+      label: `... ${hiddenCount} more available`,
+      kind: 'Text',
+      insertText: '',
+      documentation: `Type more characters to narrow down the ${hiddenCount} additional completions`,
+      detail: 'Continue typing to filter',
+      sortText: 'zzz', // Sort to bottom
+    });
+
+    logger.warn('Context completions truncated due to large size', {
+      contextName: context.name,
+      totalAvailable,
+      shown: items.length - 1, // Exclude the "more" indicator
+      hidden: hiddenCount,
+    });
   }
 
   logger.debug('Context completions generated', {
     contextName: context.name,
     prefix,
     itemCount: items.length,
+    truncated,
   });
 
   return items;

@@ -270,6 +270,45 @@ function validateFunctionWhitelist(whitelist: unknown): ValidationError[] {
 }
 
 /**
+ * Common language keywords that might conflict with context variables
+ */
+const LANGUAGE_KEYWORDS = new Set([
+  'if',
+  'else',
+  'elseif',
+  'for',
+  'foreach',
+  'while',
+  'do',
+  'switch',
+  'case',
+  'default',
+  'break',
+  'continue',
+  'return',
+  'function',
+  'true',
+  'false',
+  'null',
+  'and',
+  'or',
+  'not',
+  'in',
+  'as',
+  'new',
+  'class',
+  'extends',
+  'implements',
+  'public',
+  'private',
+  'protected',
+  'static',
+  'const',
+  'var',
+  'let',
+]);
+
+/**
  * Validate context variable schema
  */
 function validateContextSchema(schema: unknown): ValidationError[] {
@@ -327,10 +366,40 @@ function validateContextSchema(schema: unknown): ValidationError[] {
         });
       } else {
         variableNames.add(v.name);
+
+        // Check for keyword conflicts (warning only - context takes precedence)
+        if (LANGUAGE_KEYWORDS.has(v.name.toLowerCase())) {
+          errors.push({
+            field: `contextSchema.variables[${idx}].name`,
+            message: `Context variable '${v.name}' conflicts with language keyword. Context variable will take precedence in completions.`,
+            severity: 'warning',
+          });
+        }
       }
 
-      // Check for circular references (simple depth check)
+      // Validate type
+      if (!v.type || typeof v.type !== 'object') {
+        errors.push({
+          field: `contextSchema.variables[${idx}].type`,
+          message: 'Variable type must be an object',
+          severity: 'error',
+        });
+      } else {
+        const typeErrors = validateContextVariableType(v.type, `contextSchema.variables[${idx}].type`);
+        errors.push(...typeErrors);
+      }
+
+      // Check for circular references and depth limits
       if (v.properties) {
+        // Check if properties list is excessively large (>10 properties at root level triggers depth check)
+        if (v.properties.length > 10) {
+          errors.push({
+            field: `contextSchema.variables[${idx}].properties`,
+            message: `Variable has ${v.properties.length} properties. Consider grouping properties to avoid excessive depth.`,
+            severity: 'warning',
+          });
+        }
+
         const circularErrors = detectCircularReferences(v, new Set([v.name]), 0);
         errors.push(...circularErrors.map((msg) => ({
           field: `contextSchema.variables[${idx}]`,
@@ -345,31 +414,109 @@ function validateContextSchema(schema: unknown): ValidationError[] {
 }
 
 /**
+ * Validate context variable type definition
+ */
+function validateContextVariableType(
+  type: unknown,
+  fieldPath: string
+): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  if (!type || typeof type !== 'object') {
+    errors.push({
+      field: fieldPath,
+      message: 'Type must be an object',
+      severity: 'error',
+    });
+    return errors;
+  }
+
+  const t = type as Record<string, unknown>;
+
+  // Validate kind
+  const validKinds = ['object', 'array', 'scalar', 'callable'];
+  if (!t.kind || typeof t.kind !== 'string') {
+    errors.push({
+      field: `${fieldPath}.kind`,
+      message: 'Type kind must be a string',
+      severity: 'error',
+    });
+  } else if (!validKinds.includes(t.kind)) {
+    errors.push({
+      field: `${fieldPath}.kind`,
+      message: `Invalid type kind: ${t.kind}. Must be one of: ${validKinds.join(', ')}`,
+      severity: 'error',
+    });
+  }
+
+  // Validate baseType
+  if (!t.baseType || typeof t.baseType !== 'string') {
+    errors.push({
+      field: `${fieldPath}.baseType`,
+      message: 'Type baseType must be a non-empty string',
+      severity: 'warning',
+    });
+  }
+
+  // Validate array types have element type specified
+  if (t.kind === 'array') {
+    const baseType = t.baseType as string;
+    if (!baseType || !baseType.includes('<')) {
+      errors.push({
+        field: `${fieldPath}.baseType`,
+        message: 'Array types should specify element type (e.g., "array<User>")',
+        severity: 'warning',
+      });
+    }
+  }
+
+  return errors;
+}
+
+/**
  * Detect circular references in context variables
+ *
+ * Note: This is a simplified check that detects:
+ * 1. Excessive nesting depth (>10 levels)
+ * 2. Type references that could create cycles
+ *
+ * Full circular reference detection would require analyzing the entire schema
+ * and building a dependency graph, which is beyond the scope of this validator.
  */
 function detectCircularReferences(
   variable: ContextVariable,
   visited: Set<string>,
-  depth: number
+  depth: number,
+  path: string[] = []
 ): string[] {
   const errors: string[] = [];
 
+  // Check depth limit
   if (depth > 10) {
-    errors.push(`Nested object depth exceeds maximum of 10 levels`);
+    errors.push(`Nested object depth exceeds maximum of 10 levels at path: ${path.join('.')}`);
     return errors;
   }
 
-  if (variable.properties) {
-    variable.properties.forEach((prop) => {
-      if (visited.has(prop.name)) {
-        errors.push(`Circular reference detected: ${prop.name}`);
-      } else if (prop.type.kind === 'object') {
-        // For nested objects, we would need to recursively check
-        // This is a simplified version
-        visited.add(prop.name);
-      }
-    });
+  if (!variable.properties) {
+    return errors;
   }
+
+  // Check each property for potential circular references
+  variable.properties.forEach((prop) => {
+    const currentPath = [...path, prop.name];
+    const pathKey = currentPath.join('.');
+
+    // For object types, check if we're creating deep nesting
+    if (prop.type.kind === 'object') {
+      // Check if property type might reference back to a visited type
+      // This is a heuristic - full cycle detection would need the full schema
+      if (visited.has(prop.type.baseType)) {
+        errors.push(
+          `Potential circular type reference detected: ${pathKey} has type ${prop.type.baseType} which may create a cycle`
+        );
+      }
+    }
+  });
 
   return errors;
 }

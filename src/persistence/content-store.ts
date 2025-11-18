@@ -1,5 +1,13 @@
 /**
  * localStorage content persistence for editor
+ *
+ * Concurrent Tabs Behavior:
+ * When multiple tabs have the same editor open, they all write to the same localStorage key.
+ * This implementation uses a "last write wins" strategy - whichever tab saves content last
+ * will overwrite previous content. This is by design and documented behavior.
+ *
+ * Each save operation includes a timestamp, so the most recent save always takes precedence.
+ * When a tab reloads, it will see the most recently saved content from any tab.
  */
 
 import { logger } from '../utils/logger';

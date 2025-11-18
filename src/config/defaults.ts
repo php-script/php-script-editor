@@ -237,3 +237,8 @@ export const AUTOSAVE_DEBOUNCE_MS = 500;
  * Maximum nested depth for context variables
  */
 export const MAX_CONTEXT_DEPTH = 10;
+
+/**
+ * Maximum number of properties to show in completion (prevents UI lag with huge schemas)
+ */
+export const MAX_COMPLETION_ITEMS = 100;

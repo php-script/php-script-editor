@@ -476,8 +476,21 @@ export async function createPhpScriptEditor(
   // Setup Monaco workers
   setupMonacoWorkers();
 
-  // Register php-script language
-  registerPhpScriptLanguage(options.configuration.languageDefinition);
+  // Register php-script language with fallback handling
+  try {
+    registerPhpScriptLanguage(options.configuration.languageDefinition);
+    logger.info('Language definition registered successfully');
+  } catch (error) {
+    logger.error('Failed to register language definition, using fallback minimal mode', { error });
+    // Try again with fallback (no language definition - monarch.ts will use default)
+    try {
+      registerPhpScriptLanguage(undefined);
+      logger.warn('Using minimal syntax highlighting mode due to malformed configuration');
+    } catch (fallbackError) {
+      logger.error('Critical: Even fallback language registration failed', { fallbackError });
+      throw new EditorInitializationError('Failed to register language definition');
+    }
+  }
 
   // Register language providers
   const languageDisposables: monaco.IDisposable[] = [];
