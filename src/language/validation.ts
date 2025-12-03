@@ -7,9 +7,10 @@ import type { LanguageDefinition } from '../config/types';
 /**
  * Validate that a language definition is well-formed
  */
-export function validateLanguageDefinition(
-  definition: LanguageDefinition
-): { valid: boolean; errors: string[] } {
+export function validateLanguageDefinition(definition: LanguageDefinition): {
+  valid: boolean;
+  errors: string[];
+} {
   const errors: string[] = [];
 
   // Validate languageId format
@@ -45,9 +46,9 @@ export function validateLanguageDefinition(
 export function isValidPhpScriptSyntax(code: string): boolean {
   // Check for invalid PHP-specific syntax
   const invalidPatterns = [
-    /\$[a-zA-Z_]/,    // PHP variables ($variable)
-    /->/,             // PHP object operator
-    /::/,             // PHP static operator
+    /\$[a-zA-Z_]/, // PHP variables ($variable)
+    /->/, // PHP object operator
+    /::/, // PHP static operator
   ];
 
   return !invalidPatterns.some((pattern) => pattern.test(code));

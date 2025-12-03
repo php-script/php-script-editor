@@ -81,7 +81,11 @@ class Logger {
     }
 
     // Console output for development
-    if (level === LogLevel.DEBUG && typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
+    if (
+      level === LogLevel.DEBUG &&
+      typeof process !== 'undefined' &&
+      process.env?.NODE_ENV === 'development'
+    ) {
       console.log(`[${level}] ${message}`, context);
     }
   }

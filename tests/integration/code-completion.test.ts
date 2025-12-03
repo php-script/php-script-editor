@@ -60,7 +60,8 @@ describe('Code Completion Integration', () => {
   it('should filter completions as user types', () => {
     // Integration test - would require Monaco Editor instance
     // This is a placeholder for the integration test structure
-    expect(testWhitelist.functions.filter((f) => f.name.startsWith('str')).length).toBe(2);
+    // strlen starts with 'str', substr starts with 'sub' (not 'str')
+    expect(testWhitelist.functions.filter((f) => f.name.startsWith('str')).length).toBe(1);
   });
 
   it('should show function signature on hover', () => {

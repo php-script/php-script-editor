@@ -26,20 +26,14 @@ export function extractFunctionCalls(code: string): string[] {
 /**
  * Check if a function is in the whitelist
  */
-export function isFunctionWhitelisted(
-  functionName: string,
-  whitelist: FunctionWhitelist
-): boolean {
+export function isFunctionWhitelisted(functionName: string, whitelist: FunctionWhitelist): boolean {
   return whitelist.functions.some((f) => f.name === functionName);
 }
 
 /**
  * Get non-whitelisted functions from code
  */
-export function getNonWhitelistedFunctions(
-  code: string,
-  whitelist: FunctionWhitelist
-): string[] {
+export function getNonWhitelistedFunctions(code: string, whitelist: FunctionWhitelist): string[] {
   const allFunctions = extractFunctionCalls(code);
   return allFunctions.filter((fn) => !isFunctionWhitelisted(fn, whitelist));
 }
@@ -118,10 +112,7 @@ export function registerDiagnosticProvider(
 /**
  * Update diagnostics for a model
  */
-function updateDiagnostics(
-  model: monaco.editor.ITextModel,
-  whitelist: FunctionWhitelist
-): void {
+function updateDiagnostics(model: monaco.editor.ITextModel, whitelist: FunctionWhitelist): void {
   const markers = createNonWhitelistedFunctionMarkers(model, whitelist);
   monaco.editor.setModelMarkers(model, 'php-script', markers);
 }

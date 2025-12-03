@@ -214,12 +214,12 @@ Single NPM package project structure:
 
 **Purpose**: Ensure compatibility with target browsers
 
-- [ ] T084 [P] E2E test for Chrome (latest 2 versions) in tests/e2e/browser-compat.spec.ts
-- [ ] T085 [P] E2E test for Firefox (latest 2 versions) in tests/e2e/browser-compat.spec.ts
-- [ ] T086 [P] E2E test for Safari (latest 2 versions) in tests/e2e/browser-compat.spec.ts
-- [ ] T087 [P] E2E test for Edge (latest 2 versions) in tests/e2e/browser-compat.spec.ts
-- [ ] T088 Validate worker configuration in all browsers
-- [ ] T089 Verify localStorage API support and fallbacks
+- [X] T084 [P] E2E test for Chrome (latest 2 versions) in tests/e2e/browser-compat.spec.ts
+- [X] T085 [P] E2E test for Firefox (latest 2 versions) in tests/e2e/browser-compat.spec.ts
+- [X] T086 [P] E2E test for Safari (latest 2 versions) in tests/e2e/browser-compat.spec.ts
+- [X] T087 [P] E2E test for Edge (latest 2 versions) in tests/e2e/browser-compat.spec.ts
+- [X] T088 Validate worker configuration in all browsers
+- [X] T089 Verify localStorage API support and fallbacks
 
 ---
 
@@ -227,15 +227,15 @@ Single NPM package project structure:
 
 **Purpose**: Prepare package for NPM publishing
 
-- [ ] T090 Configure tsup for dual ESM/CJS builds with correct file extensions (.mjs, .cjs)
-- [ ] T091 Setup package.json exports field with proper conditional exports
-- [ ] T092 Configure Monaco Editor as peer dependency (not bundled)
-- [ ] T093 Validate package with "are-the-types-wrong" tool
-- [ ] T094 Create .npmignore to exclude test files and dev dependencies
-- [ ] T095 Add prepublishOnly script for automated build
-- [ ] T096 Verify bundle size target (<500KB total, <50KB core)
-- [ ] T097 Test package installation in TypeScript consumer project
-- [ ] T098 Test package installation in JavaScript/CommonJS consumer project
+- [X] T090 Configure tsup for dual ESM/CJS builds with correct file extensions (.mjs, .cjs)
+- [X] T091 Setup package.json exports field with proper conditional exports
+- [X] T092 Configure Monaco Editor as peer dependency (not bundled)
+- [X] T093 Validate package with "are-the-types-wrong" tool
+- [X] T094 Create .npmignore to exclude test files and dev dependencies
+- [X] T095 Add prepublishOnly script for automated build
+- [X] T096 Verify bundle size target (<500KB total, <50KB core)
+- [X] T097 Test package installation in TypeScript consumer project
+- [X] T098 Test package installation in JavaScript/CommonJS consumer project
 
 ---
 

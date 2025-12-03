@@ -285,9 +285,7 @@ describe('Context Variable Completion Provider', () => {
       const completions = provider.provideCompletionItems('user.na', 1, 8);
 
       expect(completions.some((c) => c.label === 'name')).toBe(true);
-      expect(completions.every((c) => c.label.startsWith('na') || c.label === 'name')).toBe(
-        true
-      );
+      expect(completions.every((c) => c.label.startsWith('na') || c.label === 'name')).toBe(true);
     });
 
     it('should return empty array for invalid property chains', () => {

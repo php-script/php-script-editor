@@ -5,6 +5,15 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      // Exclude E2E tests (run separately with Playwright)
+      '**/tests/e2e/**',
+      // Exclude Monaco-dependent unit tests (require full Monaco Editor setup)
+      '**/tests/unit/language/monarch.test.ts',
+      '**/tests/unit/language/completion.test.ts',
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

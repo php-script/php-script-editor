@@ -9,9 +9,7 @@ import { FALLBACK_LANGUAGE_DEFINITION } from '../config/defaults';
 /**
  * Register php-script language with Monaco
  */
-export function registerPhpScriptLanguage(
-  languageDefinition?: LanguageDefinition
-): void {
+export function registerPhpScriptLanguage(languageDefinition?: LanguageDefinition): void {
   const definition = languageDefinition || FALLBACK_LANGUAGE_DEFINITION;
 
   // Register the language

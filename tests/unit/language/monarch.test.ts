@@ -4,7 +4,11 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { registerPhpScriptLanguage, isLanguageRegistered, getLanguageDefinition } from '../../../src/language/monarch';
+import {
+  registerPhpScriptLanguage,
+  isLanguageRegistered,
+  getLanguageDefinition,
+} from '../../../src/language/monarch';
 import { isValidPhpScriptSyntax, hasDotNotation } from '../../../src/language/validation';
 import { FALLBACK_LANGUAGE_DEFINITION } from '../../../src/config/defaults';
 

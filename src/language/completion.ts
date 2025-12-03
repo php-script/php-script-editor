@@ -29,19 +29,13 @@ export interface CompletionItem {
  * Completion provider interface
  */
 export interface CompletionProvider {
-  provideCompletionItems(
-    lineText: string,
-    lineNumber: number,
-    column: number
-  ): CompletionItem[];
+  provideCompletionItems(lineText: string, lineNumber: number, column: number): CompletionItem[];
 }
 
 /**
  * Create a function completion provider from a whitelist
  */
-export function createFunctionCompletionProvider(
-  whitelist: FunctionWhitelist
-): CompletionProvider {
+export function createFunctionCompletionProvider(whitelist: FunctionWhitelist): CompletionProvider {
   return {
     provideCompletionItems: (lineText: string, _lineNumber: number, column: number) => {
       // Extract the word being typed
@@ -83,9 +77,7 @@ export function filterWhitelistedFunctions(
     return whitelist.functions;
   }
 
-  return whitelist.functions.filter((func) =>
-    func.name.toLowerCase().startsWith(lowerPrefix)
-  );
+  return whitelist.functions.filter((func) => func.name.toLowerCase().startsWith(lowerPrefix));
 }
 
 /**
@@ -161,9 +153,7 @@ export function registerFunctionCompletionProvider(
 /**
  * Create context variable completion provider
  */
-export function createContextCompletionProvider(
-  schema: ContextVariableSchema
-): CompletionProvider {
+export function createContextCompletionProvider(schema: ContextVariableSchema): CompletionProvider {
   return {
     provideCompletionItems: (lineText: string, _lineNumber: number, column: number) => {
       const textBeforeCursor = lineText.substring(0, column - 1);
@@ -209,10 +199,7 @@ export function createContextCompletionProvider(
 /**
  * Filter root-level context variables by prefix
  */
-function filterContextVariables(
-  schema: ContextVariableSchema,
-  prefix: string
-): CompletionItem[] {
+function filterContextVariables(schema: ContextVariableSchema, prefix: string): CompletionItem[] {
   const lowerPrefix = prefix.toLowerCase();
 
   return schema.variables
@@ -283,10 +270,7 @@ function traversePropertyChain(
 /**
  * Get completions for a context variable
  */
-function getContextCompletions(
-  context: ContextVariable,
-  prefix: string
-): CompletionItem[] {
+function getContextCompletions(context: ContextVariable, prefix: string): CompletionItem[] {
   const items: CompletionItem[] = [];
   const lowerPrefix = prefix.toLowerCase();
   let truncated = false;
@@ -378,9 +362,7 @@ function getFunctionSignatureFromMethod(method: {
   name: string;
   signature: { parameters: any[]; returnType: string };
 }): string {
-  const params = method.signature.parameters
-    .map((p) => `${p.name}: ${p.type}`)
-    .join(', ');
+  const params = method.signature.parameters.map((p) => `${p.name}: ${p.type}`).join(', ');
   return `${method.name}(${params}): ${method.signature.returnType}`;
 }
 
@@ -462,8 +444,8 @@ export function registerContextCompletionProvider(
           c.kind === 'Method'
             ? monaco.languages.CompletionItemKind.Method
             : c.kind === 'Constant'
-            ? monaco.languages.CompletionItemKind.Constant
-            : monaco.languages.CompletionItemKind.Property;
+              ? monaco.languages.CompletionItemKind.Constant
+              : monaco.languages.CompletionItemKind.Property;
 
         return {
           label: c.label,

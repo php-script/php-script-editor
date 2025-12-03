@@ -2,11 +2,7 @@
  * Configuration validation logic for php-script Monaco Editor
  */
 
-import type {
-  ContextVariable,
-  ValidationError,
-  ValidationResult,
-} from './types';
+import type { ContextVariable, ValidationError, ValidationResult } from './types';
 
 /**
  * Validate a complete configuration bundle
@@ -385,7 +381,10 @@ function validateContextSchema(schema: unknown): ValidationError[] {
           severity: 'error',
         });
       } else {
-        const typeErrors = validateContextVariableType(v.type, `contextSchema.variables[${idx}].type`);
+        const typeErrors = validateContextVariableType(
+          v.type,
+          `contextSchema.variables[${idx}].type`
+        );
         errors.push(...typeErrors);
       }
 
@@ -400,12 +399,16 @@ function validateContextSchema(schema: unknown): ValidationError[] {
           });
         }
 
-        const circularErrors = detectCircularReferences(v, new Set([v.name]), 0);
-        errors.push(...circularErrors.map((msg) => ({
-          field: `contextSchema.variables[${idx}]`,
-          message: msg,
-          severity: 'error' as const,
-        })));
+        // Build a set of type names seen so far (for circular type detection)
+        const visitedTypes = new Set<string>([v.type.baseType]);
+        const circularErrors = detectCircularReferences(v, visitedTypes, 0);
+        errors.push(
+          ...circularErrors.map((msg) => ({
+            field: `contextSchema.variables[${idx}]`,
+            message: msg,
+            severity: 'error' as const,
+          }))
+        );
       }
     });
   }
@@ -416,10 +419,7 @@ function validateContextSchema(schema: unknown): ValidationError[] {
 /**
  * Validate context variable type definition
  */
-function validateContextVariableType(
-  type: unknown,
-  fieldPath: string
-): ValidationError[] {
+function validateContextVariableType(type: unknown, fieldPath: string): ValidationError[] {
   const errors: ValidationError[] = [];
 
   if (!type || typeof type !== 'object') {
@@ -512,7 +512,7 @@ function detectCircularReferences(
       // This is a heuristic - full cycle detection would need the full schema
       if (visited.has(prop.type.baseType)) {
         errors.push(
-          `Potential circular type reference detected: ${pathKey} has type ${prop.type.baseType} which may create a cycle`
+          `Circular type reference detected: ${pathKey} has type ${prop.type.baseType} which creates a cycle`
         );
       }
     }
@@ -525,7 +525,8 @@ function detectCircularReferences(
  * Validate semver format
  */
 function isValidSemver(version: string): boolean {
-  const semverRegex = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
+  const semverRegex =
+    /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
   return semverRegex.test(version);
 }
 
