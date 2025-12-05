@@ -34,3 +34,6 @@ coverage/
 # Logs
 *.log
 logs/
+
+# Test reports
+/playwright-report
