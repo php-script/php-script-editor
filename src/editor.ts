@@ -123,14 +123,14 @@ export interface CreateEditorOptions {
  *
  * @param config - The new configuration bundle
  */
-export type ConfigurationChangedCallback = (config: ConfigurationBundle) => void;
+export type ConfigurationChangedCallback = (_config: ConfigurationBundle) => void;
 
 /**
  * Callback invoked when validation errors occur
  *
  * @param errors - Array of error messages
  */
-export type ValidationErrorCallback = (errors: string[]) => void;
+export type ValidationErrorCallback = (_errors: string[]) => void;
 
 /**
  * Callback invoked when content is persisted to localStorage
@@ -138,7 +138,7 @@ export type ValidationErrorCallback = (errors: string[]) => void;
  * @param storageKey - The localStorage key used
  * @param contentLength - Size of persisted content in characters
  */
-export type ContentPersistedCallback = (storageKey: string, contentLength: number) => void;
+export type ContentPersistedCallback = (_storageKey: string, _contentLength: number) => void;
 
 /**
  * PHP-Script Editor instance with full API surface
@@ -212,7 +212,7 @@ export interface PhpScriptEditor {
    *
    * @param value - New content to set in the editor
    */
-  setValue(value: string): void;
+  setValue(_value: string): void;
 
   // === Configuration Management ===
 
@@ -245,7 +245,7 @@ export interface PhpScriptEditor {
    * });
    * ```
    */
-  updateFunctionWhitelist(whitelist: import('./config/types').FunctionWhitelist): void;
+  updateFunctionWhitelist(_whitelist: import('./config/types').FunctionWhitelist): void;
 
   /**
    * Update context variable schema dynamically
@@ -266,7 +266,7 @@ export interface PhpScriptEditor {
    * });
    * ```
    */
-  updateContextSchema(schema: import('./config/types').ContextVariableSchema): void;
+  updateContextSchema(_schema: import('./config/types').ContextVariableSchema): void;
 
   // === Content Persistence ===
 
@@ -332,7 +332,7 @@ export interface PhpScriptEditor {
    * });
    * ```
    */
-  onConfigurationChanged(callback: ConfigurationChangedCallback): void;
+  onConfigurationChanged(_callback: ConfigurationChangedCallback): void;
 
   /**
    * Subscribe to validation error events
@@ -348,7 +348,7 @@ export interface PhpScriptEditor {
    * });
    * ```
    */
-  onValidationError(callback: ValidationErrorCallback): void;
+  onValidationError(_callback: ValidationErrorCallback): void;
 
   /**
    * Subscribe to content persisted events
@@ -364,7 +364,7 @@ export interface PhpScriptEditor {
    * });
    * ```
    */
-  onContentPersisted(callback: ContentPersistedCallback): void;
+  onContentPersisted(_callback: ContentPersistedCallback): void;
 
   // === Lifecycle ===
 
