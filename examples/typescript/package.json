@@ -1,0 +1,21 @@
+{
+  "name": "php-script-editor-typescript-example",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TypeScript example for php-script-monaco-editor",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "monaco-editor": "^0.50.0",
+    "php-script-monaco-editor": "file:../../"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0",
+    "vite": "^5.4.0"
+  }
+}

@@ -2,6 +2,8 @@
 src/
 tests/
 specs/
+examples/
+docs/
 .specify/
 
 # Configuration files
@@ -37,3 +39,11 @@ node_modules/
 # Environment
 .env
 .env.*
+
+# Documentation (internal)
+CLAUDE.md
+IMPLEMENTATION_STATUS.md
+
+# Package tarballs
+*.tgz
+*.tar.gz

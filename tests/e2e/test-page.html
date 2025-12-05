@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PHP-Script Monaco Editor - E2E Test Page</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    #container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    #editor-container {
+      flex: 1;
+      border: 1px solid #ccc;
+    }
+    #controls {
+      padding: 10px;
+      background-color: #f5f5f5;
+      border-bottom: 1px solid #ccc;
+    }
+    button {
+      margin-right: 10px;
+      padding: 5px 15px;
+    }
+    #status {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      min-height: 50px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="controls">
+      <button id="btn-get-value">Get Value</button>
+      <button id="btn-clear">Clear</button>
+      <button id="btn-revert">Revert to Original</button>
+      <button id="btn-has-changes">Has Changes?</button>
+      <button id="btn-trigger-completion">Trigger Completion</button>
+      <div id="status"></div>
+    </div>
+    <div id="editor-container"></div>
+  </div>
+
+  <script type="module">
+    import * as monaco from 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/+esm';
+
+    // Configure Monaco environment for workers
+    self.MonacoEnvironment = {
+      getWorkerUrl: function (moduleId, label) {
+        if (label === 'json') {
+          return 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/esm/vs/language/json/json.worker.js';
+        }
+        if (label === 'css' || label === 'scss' || label === 'less') {
+          return 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/esm/vs/language/css/css.worker.js';
+        }
+        if (label === 'html' || label === 'handlebars' || label === 'razor') {
+          return 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/esm/vs/language/html/html.worker.js';
+        }
+        if (label === 'typescript' || label === 'javascript') {
+          return 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/esm/vs/language/typescript/ts.worker.js';
+        }
+        return 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/esm/vs/editor/editor.worker.js';
+      }
+    };
+
+    // Mock server-side configuration
+    window.phpScriptEditorConfig = {
+      languageDefinition: {
+        languageId: 'php-script',
+        monarchDefinition: {
+          defaultToken: '',
+          tokenizer: {
+            root: [
+              [/\b(if|else|elseif|while|for|foreach|function|return|break|continue|switch|case|default|try|catch|finally)\b/, 'keyword'],
+              [/\b(true|false|null)\b/, 'constant'],
+              [/\b(strlen|substr|strpos|str_replace|array_map|array_filter|count|isset|empty|is_null|is_array|is_string|date|time|strtotime)\b/, 'function'],
+              [/[a-zA-Z_]\w*\s*\(/, { token: 'function', next: '@function_call' }],
+              [/[a-zA-Z_]\w*(?:\.[a-zA-Z_]\w*)+/, 'variable.property'],
+              [/[a-zA-Z_]\w*/, 'identifier'],
+              [/\d+\.?\d*/, 'number'],
+              [/"([^"\\]|\\.)*"/, 'string'],
+              [/'([^'\\]|\\.)*'/, 'string'],
+              [/\/\/.*$/, 'comment'],
+              [/\/\*/, 'comment', '@comment'],
+              [/[{}()\[\]]/, '@brackets'],
+              [/[;,.]/, 'delimiter'],
+              [/[<>!=]=?/, 'operator'],
+              [/[+\-*\/]/, 'operator']
+            ],
+            comment: [
+              [/[^\/*]+/, 'comment'],
+              [/\*\//, 'comment', '@pop'],
+              [/[\/*]/, 'comment']
+            ],
+            function_call: [
+              [/\)/, 'function', '@pop'],
+              { include: 'root' }
+            ]
+          }
+        },
+        fileExtensions: ['.phs', '.phpscript'],
+        mimeTypes: ['text/x-php-script'],
+        configuration: {
+          comments: {
+            lineComment: '//',
+            blockComment: ['/*', '*/']
+          },
+          brackets: [['(', ')'], ['{', '}'], ['[', ']']],
+          autoClosingPairs: [
+            { open: '{', close: '}' },
+            { open: '[', close: ']' },
+            { open: '(', close: ')' },
+            { open: '"', close: '"' },
+            { open: "'", close: "'" }
+          ]
+        }
+      },
+      functionWhitelist: {
+        functions: [
+          {
+            name: 'strlen',
+            signature: {
+              parameters: [{ name: 'string', type: 'string', optional: false }],
+              returnType: 'int'
+            },
+            documentation: 'Returns the length of a string',
+            category: 'string',
+            deprecated: false
+          },
+          {
+            name: 'substr',
+            signature: {
+              parameters: [
+                { name: 'string', type: 'string', optional: false },
+                { name: 'start', type: 'int', optional: false },
+                { name: 'length', type: 'int', optional: true }
+              ],
+              returnType: 'string'
+            },
+            documentation: 'Returns part of a string',
+            category: 'string',
+            deprecated: false
+          },
+          {
+            name: 'count',
+            signature: {
+              parameters: [{ name: 'array', type: 'array', optional: false }],
+              returnType: 'int'
+            },
+            documentation: 'Counts elements in an array',
+            category: 'array',
+            deprecated: false
+          }
+        ]
+      },
+      contextSchema: {
+        variables: [
+          {
+            name: 'user',
+            type: { kind: 'object', baseType: 'User' },
+            properties: [
+              {
+                name: 'name',
+                type: { kind: 'scalar', baseType: 'string' },
+                readonly: false,
+                documentation: 'User full name'
+              },
+              {
+                name: 'email',
+                type: { kind: 'scalar', baseType: 'string' },
+                readonly: true,
+                documentation: 'User email address'
+              },
+              {
+                name: 'logins',
+                type: { kind: 'object', baseType: 'LoginCollection' },
+                readonly: true,
+                documentation: 'User login history',
+                properties: [
+                  {
+                    name: 'count',
+                    type: { kind: 'callable', baseType: 'function' },
+                    readonly: true,
+                    documentation: 'Returns login count',
+                    methods: [{
+                      name: 'count',
+                      signature: { parameters: [], returnType: 'int' },
+                      documentation: 'Get total login count'
+                    }]
+                  }
+                ]
+              }
+            ],
+            methods: [],
+            documentation: 'Current authenticated user',
+            nullable: false
+          },
+          {
+            name: 'request',
+            type: { kind: 'object', baseType: 'Request' },
+            properties: [
+              {
+                name: 'method',
+                type: { kind: 'scalar', baseType: 'string' },
+                readonly: true,
+                documentation: 'HTTP method (GET, POST, etc.)'
+              },
+              {
+                name: 'url',
+                type: { kind: 'scalar', baseType: 'string' },
+                readonly: true,
+                documentation: 'Request URL'
+              }
+            ],
+            methods: [],
+            documentation: 'Current HTTP request',
+            nullable: false
+          }
+        ]
+      },
+      bundleVersion: '1.0.0',
+      compatibility: {
+        minEditorVersion: '1.0.0',
+        maxEditorVersion: null,
+        phpScriptEngine: '2.5.0'
+      },
+      metadata: {
+        generatedAt: new Date().toISOString(),
+        generatedBy: 'test-page',
+        environment: 'test'
+      }
+    };
+
+    window.phpScriptInitialContent = 'user.logins.count()';
+
+    // For testing purposes, we'll create a basic editor wrapper
+    // In production, this would be the actual createPhpScriptEditor from the package
+    let editor;
+    let originalContent = window.phpScriptInitialContent;
+
+    async function initEditor() {
+      try {
+        // Register php-script language
+        monaco.languages.register({ id: 'php-script' });
+
+        // Set Monarch tokens provider
+        monaco.languages.setMonarchTokensProvider(
+          'php-script',
+          window.phpScriptEditorConfig.languageDefinition.monarchDefinition
+        );
+
+        // Set language configuration
+        monaco.languages.setLanguageConfiguration(
+          'php-script',
+          window.phpScriptEditorConfig.languageDefinition.configuration
+        );
+
+        // Register completion provider
+        monaco.languages.registerCompletionItemProvider('php-script', {
+          provideCompletionItems: (model, position) => {
+            const word = model.getWordUntilPosition(position);
+            const range = {
+              startLineNumber: position.lineNumber,
+              endLineNumber: position.lineNumber,
+              startColumn: word.startColumn,
+              endColumn: word.endColumn
+            };
+
+            const suggestions = [];
+
+            // Function completions
+            window.phpScriptEditorConfig.functionWhitelist.functions.forEach(func => {
+              suggestions.push({
+                label: func.name,
+                kind: monaco.languages.CompletionItemKind.Function,
+                insertText: func.name + '()',
+                documentation: func.documentation,
+                range: range
+              });
+            });
+
+            // Context variable completions
+            const lineContent = model.getLineContent(position.lineNumber);
+            const textUntilPosition = lineContent.substring(0, position.column - 1);
+
+            // Root level variables
+            if (!textUntilPosition.includes('.') || textUntilPosition.endsWith('.')) {
+              window.phpScriptEditorConfig.contextSchema.variables.forEach(variable => {
+                suggestions.push({
+                  label: variable.name,
+                  kind: monaco.languages.CompletionItemKind.Variable,
+                  insertText: variable.name,
+                  documentation: variable.documentation,
+                  range: range
+                });
+              });
+            }
+
+            // Property completions
+            const propertyMatch = textUntilPosition.match(/(\w+(?:\.\w+)*)\s*\.?\s*$/);
+            if (propertyMatch) {
+              const chain = propertyMatch[1].split('.');
+              let currentSchema = window.phpScriptEditorConfig.contextSchema.variables;
+
+              for (const part of chain) {
+                const found = currentSchema.find(v => v.name === part);
+                if (found && found.properties) {
+                  currentSchema = found.properties;
+                } else {
+                  break;
+                }
+              }
+
+              if (Array.isArray(currentSchema)) {
+                currentSchema.forEach(prop => {
+                  suggestions.push({
+                    label: prop.name,
+                    kind: monaco.languages.CompletionItemKind.Property,
+                    insertText: prop.name,
+                    documentation: prop.documentation,
+                    range: range
+                  });
+                });
+              }
+            }
+
+            return { suggestions: suggestions };
+          }
+        });
+
+        // Create editor
+        editor = monaco.editor.create(document.getElementById('editor-container'), {
+          value: window.phpScriptInitialContent,
+          language: 'php-script',
+          theme: 'vs-dark',
+          automaticLayout: true,
+          minimap: { enabled: false },
+          fontSize: 14
+        });
+
+        // Expose editor and monaco globally for testing
+        window.editor = editor;
+        window.monaco = monaco;
+        window.editorReady = true;
+
+        // Setup button handlers
+        document.getElementById('btn-get-value').addEventListener('click', () => {
+          const value = editor.getValue();
+          document.getElementById('status').textContent = `Value: ${value}`;
+        });
+
+        document.getElementById('btn-clear').addEventListener('click', () => {
+          editor.setValue('');
+          document.getElementById('status').textContent = 'Editor cleared';
+        });
+
+        document.getElementById('btn-revert').addEventListener('click', () => {
+          editor.setValue(originalContent);
+          document.getElementById('status').textContent = 'Reverted to original';
+        });
+
+        document.getElementById('btn-has-changes').addEventListener('click', () => {
+          const hasChanges = editor.getValue() !== originalContent;
+          document.getElementById('status').textContent = `Has changes: ${hasChanges}`;
+        });
+
+        document.getElementById('btn-trigger-completion').addEventListener('click', () => {
+          editor.focus();
+          editor.trigger('test', 'editor.action.triggerSuggest', {});
+          document.getElementById('status').textContent = 'Completion triggered';
+        });
+
+        document.getElementById('status').textContent = 'Editor initialized successfully';
+      } catch (error) {
+        document.getElementById('status').textContent = `Error: ${error.message}`;
+        console.error('Editor initialization error:', error);
+      }
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initEditor);
+    } else {
+      initEditor();
+    }
+  </script>
+</body>
+</html>
