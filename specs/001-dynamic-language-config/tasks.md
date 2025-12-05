@@ -249,9 +249,9 @@ Single NPM package project structure:
 - [X] T102 [P] Create example projects for TypeScript and JavaScript consumers
 - [X] T103 [P] Document server-side PHP integration pattern
 - [X] T104 [P] Add troubleshooting guide with common issues
-- [ ] T105 Code cleanup and refactoring across all modules
-- [ ] T106 Add inline code comments for complex logic
-- [ ] T107 Run final linting and formatting pass
+- [X] T105 Code cleanup and refactoring across all modules
+- [X] T106 Add inline code comments for complex logic
+- [X] T107 Run final linting and formatting pass
 - [ ] T108 Validate quickstart.md scenarios against actual package
 
 ---

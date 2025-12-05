@@ -29,7 +29,7 @@ export interface CompletionItem {
  * Completion provider interface
  */
 export interface CompletionProvider {
-  provideCompletionItems(lineText: string, lineNumber: number, column: number): CompletionItem[];
+  provideCompletionItems(_lineText: string, _lineNumber: number, _column: number): CompletionItem[];
 }
 
 /**

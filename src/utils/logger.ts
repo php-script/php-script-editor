@@ -3,9 +3,13 @@
  */
 
 export enum LogLevel {
+  // eslint-disable-next-line no-unused-vars
   DEBUG = 'DEBUG',
+  // eslint-disable-next-line no-unused-vars
   INFO = 'INFO',
+  // eslint-disable-next-line no-unused-vars
   WARN = 'WARN',
+  // eslint-disable-next-line no-unused-vars
   ERROR = 'ERROR',
 }
 
@@ -86,6 +90,7 @@ class Logger {
       typeof process !== 'undefined' &&
       process.env?.NODE_ENV === 'development'
     ) {
+      // eslint-disable-next-line no-console
       console.log(`[${level}] ${message}`, context);
     }
   }
