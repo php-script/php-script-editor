@@ -125,7 +125,7 @@ test.describe('PHP-Script Editor - Cross-Browser Compatibility', () => {
         startLineNumber: 1,
         startColumn: 1,
         endLineNumber: 1,
-        endColumn: 7
+        endColumn: 7,
       });
     });
     const selection = await page.evaluate(() => {
@@ -134,7 +134,7 @@ test.describe('PHP-Script Editor - Cross-Browser Compatibility', () => {
         startLineNumber: sel.startLineNumber,
         startColumn: sel.startColumn,
         endLineNumber: sel.endLineNumber,
-        endColumn: sel.endColumn
+        endColumn: sel.endColumn,
       };
     });
     expect(selection.startLineNumber).toBe(1);
@@ -159,9 +159,7 @@ test.describe('PHP-Script Editor - Cross-Browser Compatibility', () => {
     await page.waitForTimeout(2000);
 
     // Filter out known non-critical errors
-    const workerErrors = errors.filter(err =>
-      err.includes('worker') || err.includes('Worker')
-    );
+    const workerErrors = errors.filter((err) => err.includes('worker') || err.includes('Worker'));
 
     expect(workerErrors.length).toBe(0);
 
@@ -316,7 +314,7 @@ test.describe('PHP-Script Editor - Cross-Browser Compatibility', () => {
       const container = document.getElementById('editor-container');
       return {
         width: container.offsetWidth,
-        height: container.offsetHeight
+        height: container.offsetHeight,
       };
     });
 
