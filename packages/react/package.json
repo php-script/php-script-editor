@@ -1,6 +1,6 @@
 {
   "name": "@php-script/editor-react",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "React wrapper for the <php-script-editor> web component.",
   "license": "MIT",
   "type": "module",
