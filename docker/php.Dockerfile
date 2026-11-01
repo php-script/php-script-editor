@@ -1,5 +1,5 @@
-# PHP for the dev API server (dev-server/) and the Laravel package tests (packages/laravel/).
-FROM php:8.4-cli
+# PHP 8.5 for the dev API server (dev-server/), the Laravel/Filament package tests and the demo.
+FROM php:8.5-cli
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git unzip libicu-dev libzip-dev \
