@@ -67,3 +67,8 @@ playground/blob-report/
 
 # pnpm store created by containers that mount the repo
 .pnpm-store/
+
+# Jekyll docs
+docs/_site/
+docs/.jekyll-cache/
+docs/vendor/

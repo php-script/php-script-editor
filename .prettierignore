@@ -5,6 +5,7 @@ pnpm-lock.yaml
 playwright-report/
 test-results/
 packages/laravel/vendor/
+packages/filament/vendor/
 packages/laravel/resources/dist/
 dev-server/vendor/
 dev-server/storage/
@@ -14,3 +15,7 @@ dev-server/storage/
 .svelte-kit/
 examples/
 **/composer.json
+docs/_site/
+docs/.jekyll-cache/
+docs/vendor/
+docs/**/*.md

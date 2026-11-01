@@ -1,5 +1,10 @@
 # php-script/editor-filament
 
+[![Packagist](https://img.shields.io/packagist/v/php-script/editor-filament?label=packagist)](https://packagist.org/packages/php-script/editor-filament)
+[![Downloads](https://img.shields.io/packagist/dt/php-script/editor-filament?label=downloads)](https://packagist.org/packages/php-script/editor-filament)
+
+Documentation: https://php-script.github.io/php-script-editor/packages/filament.html
+
 [Filament](https://filamentphp.com) 5 form field for the `<php-script-editor>` web component (Monaco based
 editor for [php-script](https://github.com/php-script/php-script) v2). Built on
 [`php-script/editor-laravel`](../laravel/README.md) (`EditorConfig`, `LintResponse`, `ValidPhpScript`, config).
@@ -58,7 +63,7 @@ Theming (CSS custom properties mapped to the panel palette) is described in the
 
 This package lives in `packages/filament` of the php-script-editor monorepo and requires
 `php-script/editor-laravel` from `../laravel` through a composer path repository. Composer ignores `repositories` and the
-`@dev` flag outside the root package, so a released split resolves `php-script/editor-laravel` ^2.0 from Packagist.
+`@dev` flag outside the root package, so a released split resolves `php-script/editor-laravel` ^0.1 from Packagist.
 
 ```bash
 composer install
