@@ -25,7 +25,7 @@ beforeEach(function (): void {
 it('renders the element with the script tag', function (): void {
     $html = Blade::render('<x-php-script-editor name="script" value="return 1;" />');
 
-    expect($html)->toContain('<script type="module" src="https://cdn.jsdelivr.net/npm/@php-script/editor@2/dist/standalone/php-script-editor.js"')
+    expect($html)->toContain('<script type="module" src="https://cdn.jsdelivr.net/npm/@php-script/editor@0.1/dist/standalone/php-script-editor.js"')
         ->and($html)->toContain('<php-script-editor name="script" value="return 1;" theme="auto"');
 });
 

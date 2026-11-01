@@ -25,9 +25,9 @@ set_env() { # KEY VALUE: replace or append a .env line
   fi
 }
 
-path_repo() { # NAME DIR: composer path repository with a version, so ^2.0 constraints resolve
+path_repo() { # NAME DIR: composer path repository with a version, so ^0.1 constraints resolve
   composer config "repositories.$1" \
-    "{\"type\":\"path\",\"url\":\"$2\",\"options\":{\"symlink\":true,\"versions\":{\"php-script/$1\":\"2.0.x-dev\"}}}"
+    "{\"type\":\"path\",\"url\":\"$2\",\"options\":{\"symlink\":true,\"versions\":{\"php-script/$1\":\"0.1.x-dev\"}}}"
 }
 
 if [ ! -f "$APP/artisan" ]; then
@@ -43,7 +43,7 @@ if [ ! -f "$APP/artisan" ]; then
   composer require --no-interaction --no-progress --no-update 'php:^8.5'
   composer require --no-interaction --no-progress -W \
     'filament/filament:^5.0' 'php-script/php-script:^2.0' \
-    'php-script/editor-laravel:^2.0@dev' 'php-script/editor-filament:^2.0@dev'
+    'php-script/editor-laravel:^0.1@dev' 'php-script/editor-filament:^0.1@dev'
   php artisan filament:install --panels --no-interaction
   cd /
   [ ! -d "$APP" ] || rmdir "$APP" # empty leftover, e.g. a working_dir created by Docker

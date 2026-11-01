@@ -17,7 +17,7 @@ final class EditorAssets
 {
     public const string PACKAGE = 'php-script/editor-laravel';
 
-    public const string DEFAULT_CDN_URL = 'https://cdn.jsdelivr.net/npm/@php-script/editor@2/dist/standalone/php-script-editor.js';
+    public const string DEFAULT_CDN_URL = 'https://cdn.jsdelivr.net/npm/@php-script/editor@0.1/dist/standalone/php-script-editor.js';
 
     private bool $rendered = false;
 

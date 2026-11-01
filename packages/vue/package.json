@@ -1,6 +1,6 @@
 {
   "name": "@php-script/editor-vue",
-  "version": "2.0.0",
+  "version": "0.1.0",
   "description": "Vue 3 wrapper for the <php-script-editor> web component (v-model support).",
   "license": "MIT",
   "type": "module",

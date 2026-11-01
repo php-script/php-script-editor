@@ -45,7 +45,7 @@ The directory is also published with Laravel's `laravel-assets` tag, so the usua
 | ------------------------------ | --------------------------------------------------------------------------------------------------- |
 | `asset`                        | `published` (default, `PHP_SCRIPT_EDITOR_ASSET`) or `cdn` (explicit opt-in)                         |
 | `asset_url`                    | Explicit URL, wins over everything (e.g. your own Vite build)                                       |
-| `cdn_url`                      | Default `https://cdn.jsdelivr.net/npm/@php-script/editor@2/dist/standalone/php-script-editor.js`    |
+| `cdn_url`                      | Default `https://cdn.jsdelivr.net/npm/@php-script/editor@0.1/dist/standalone/php-script-editor.js`  |
 | `inject_script`                | The Blade component adds the `<script type="module">` tag itself, once per request (default `true`) |
 | `theme`                        | Default theme: `light`, `dark` or `auto` (follows `html.dark`)                                      |
 | `height`                       | Default height (any CSS length)                                                                     |

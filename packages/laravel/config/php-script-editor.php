@@ -27,7 +27,7 @@ return [
 
     'published_path' => 'vendor/php-script-editor/php-script-editor.js',
 
-    'cdn_url' => 'https://cdn.jsdelivr.net/npm/@php-script/editor@2/dist/standalone/php-script-editor.js',
+    'cdn_url' => 'https://cdn.jsdelivr.net/npm/@php-script/editor@0.1/dist/standalone/php-script-editor.js',
 
     /*
     | The Blade component adds the <script type="module"> tag itself (once per
