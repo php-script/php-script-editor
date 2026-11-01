@@ -1,0 +1,95 @@
+# Local dev and test environment. Works with Docker Desktop and OrbStack.
+#
+#   docker compose up                      # dev server (PHP :8080) + playground (:5173)
+#   docker compose run --rm test           # vitest (unit + browser) and Playwright e2e
+#   docker compose run --rm test-php       # Pest tests of packages/laravel
+#
+# node_modules and vendor live in named volumes, so host (macOS) and container (Linux)
+# installs never clash.
+
+x-node: &node
+  image: php-script-editor-node
+  build:
+    context: ./docker
+    dockerfile: node.Dockerfile
+  entrypoint: ['/app/docker/node-entrypoint.sh']
+  volumes:
+    - .:/app
+    - pnpm-store:/pnpm/store
+    - node_modules:/app/node_modules
+    - node_modules-editor:/app/packages/editor/node_modules
+    - node_modules-react:/app/packages/react/node_modules
+    - node_modules-vue:/app/packages/vue/node_modules
+    - node_modules-svelte:/app/packages/svelte/node_modules
+    - node_modules-playground:/app/playground/node_modules
+  environment:
+    PHP_SERVER: http://php:8080
+  ipc: host
+
+x-php: &php
+  image: php-script-editor-php
+  build:
+    context: ./docker
+    dockerfile: php.Dockerfile
+  volumes:
+    - .:/app
+    - composer-cache:/composer
+    - vendor-dev-server:/app/dev-server/vendor
+    - vendor-laravel:/app/packages/laravel/vendor
+
+services:
+  php:
+    <<: *php
+    working_dir: /app/dev-server
+    command: sh -c "composer install --no-interaction --no-progress && php -S 0.0.0.0:8080 -t public public/index.php"
+    environment:
+      SCRIPT_STORAGE: /app/dev-server/storage/docker
+    ports:
+      - '8080:8080'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'php',
+          '-r',
+          "exit(@file_get_contents('http://127.0.0.1:8080/health') === false ? 1 : 0);",
+        ]
+      interval: 3s
+      timeout: 3s
+      retries: 40
+      start_period: 60s
+
+  playground:
+    <<: *node
+    command: pnpm --filter playground exec vite --host 0.0.0.0 --port 5173 --strictPort
+    ports:
+      - '5173:5173'
+    depends_on:
+      php:
+        condition: service_healthy
+
+  test:
+    <<: *node
+    profiles: [test]
+    command: sh -c "pnpm typecheck && pnpm -r --workspace-concurrency=1 --if-present test && pnpm test:e2e"
+    depends_on:
+      php:
+        condition: service_healthy
+
+  test-php:
+    <<: *php
+    profiles: [test]
+    working_dir: /app/packages/laravel
+    command: sh -c "composer install --no-interaction --no-progress && composer test"
+
+volumes:
+  pnpm-store:
+  composer-cache:
+  node_modules:
+  node_modules-editor:
+  node_modules-react:
+  node_modules-vue:
+  node_modules-svelte:
+  node_modules-playground:
+  vendor-dev-server:
+  vendor-laravel:
