@@ -56,3 +56,11 @@ Thumbs.db
 
 # Specify framework specific ignores
 .specify/cache/
+
+# Playwright (playground)
+playground/test-results/
+playground/playwright-report/
+playground/blob-report/
+
+# SvelteKit packaging cache
+.svelte-kit/
