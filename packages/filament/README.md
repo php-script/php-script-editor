@@ -1,5 +1,10 @@
 # php-script/editor-filament
 
+[![Packagist](https://img.shields.io/packagist/v/php-script/editor-filament?label=packagist)](https://packagist.org/packages/php-script/editor-filament)
+[![Downloads](https://img.shields.io/packagist/dt/php-script/editor-filament?label=downloads)](https://packagist.org/packages/php-script/editor-filament)
+
+Documentation: https://php-script.github.io/php-script-editor/packages/filament.html
+
 [Filament](https://filamentphp.com) 5 form field for the `<php-script-editor>` web component (Monaco based
 editor for [php-script](https://github.com/php-script/php-script) v2). Built on
 [`php-script/editor-laravel`](../laravel/README.md) (`EditorConfig`, `LintResponse`, `ValidPhpScript`, config).

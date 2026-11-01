@@ -1,5 +1,10 @@
 # php-script/editor-laravel
 
+[![Packagist](https://img.shields.io/packagist/v/php-script/editor-laravel?label=packagist)](https://packagist.org/packages/php-script/editor-laravel)
+[![Downloads](https://img.shields.io/packagist/dt/php-script/editor-laravel?label=downloads)](https://packagist.org/packages/php-script/editor-laravel)
+
+Documentation: https://php-script.github.io/php-script-editor/packages/laravel.html
+
 Laravel integration for the `<php-script-editor>` web component
 (Monaco based editor for [php-script](https://github.com/php-script/php-script) v2).
 

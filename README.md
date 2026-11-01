@@ -1,5 +1,7 @@
 # php-script-editor
 
+Documentation: https://php-script.github.io/php-script-editor/
+
 A Monaco-based `<php-script-editor>` web component for [php-script](https://github.com/php-script/php-script) v2,
 with thin wrappers for React, Vue and Svelte and an integration package for Laravel and Filament.
 
@@ -17,14 +19,14 @@ with thin wrappers for React, Vue and Svelte and an integration package for Lara
 - **Loads Monaco lazily.** The element is small; Monaco is imported when the first editor connects,
   and its worker is a separate file.
 
-| Package                                           | For                                            |
-| ------------------------------------------------- | ---------------------------------------------- |
-| [`@php-script/editor`](packages/editor)           | The web component (vanilla, Angular, Solid)    |
-| [`@php-script/editor-react`](packages/react)      | React 18 and 19                                |
-| [`@php-script/editor-vue`](packages/vue)          | Vue 3 and Nuxt                                 |
-| [`@php-script/editor-svelte`](packages/svelte)    | Svelte 5 and SvelteKit                         |
-| [`php-script/editor-laravel`](packages/laravel)   | Laravel: Blade component, assets, lint, rule   |
-| [`php-script/editor-filament`](packages/filament) | Filament 5 form field (requires the above one) |
+| Package                                           | For                                            | Version                                                                                                                                                  |
+| ------------------------------------------------- | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`@php-script/editor`](packages/editor)           | The web component (vanilla, Angular, Solid)    | [![npm](https://img.shields.io/npm/v/@php-script/editor?label=npm)](https://www.npmjs.com/package/@php-script/editor)                                    |
+| [`@php-script/editor-react`](packages/react)      | React 18 and 19                                | [![npm](https://img.shields.io/npm/v/@php-script/editor-react?label=npm)](https://www.npmjs.com/package/@php-script/editor-react)                        |
+| [`@php-script/editor-vue`](packages/vue)          | Vue 3 and Nuxt                                 | [![npm](https://img.shields.io/npm/v/@php-script/editor-vue?label=npm)](https://www.npmjs.com/package/@php-script/editor-vue)                            |
+| [`@php-script/editor-svelte`](packages/svelte)    | Svelte 5 and SvelteKit                         | [![npm](https://img.shields.io/npm/v/@php-script/editor-svelte?label=npm)](https://www.npmjs.com/package/@php-script/editor-svelte)                      |
+| [`php-script/editor-laravel`](packages/laravel)   | Laravel: Blade component, assets, lint, rule   | [![Packagist](https://img.shields.io/packagist/v/php-script/editor-laravel?label=packagist)](https://packagist.org/packages/php-script/editor-laravel)   |
+| [`php-script/editor-filament`](packages/filament) | Filament 5 form field (requires the above one) | [![Packagist](https://img.shields.io/packagist/v/php-script/editor-filament?label=packagist)](https://packagist.org/packages/php-script/editor-filament) |
 
 ## Quick start
 
