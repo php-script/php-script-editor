@@ -5,6 +5,7 @@
   "license": "MIT",
   "type": "module",
   "sideEffects": [
+    "./src/monaco.ts",
     "./dist/index.js",
     "./dist/standalone/*",
     "*.css"

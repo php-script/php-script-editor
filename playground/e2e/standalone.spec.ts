@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { editorReady } from './helpers.js';
+import { editorReady, typeInto } from './helpers.js';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/standalone.html');
@@ -33,4 +33,14 @@ test('native input event works for Alpine x-model style binding', async ({ page 
   await host.locator('.view-lines').click();
   await page.keyboard.type('echo taxRate;');
   await expect(page.getByTestId('bound-value')).toHaveText('echo taxRate;');
+});
+
+// Regression: the standalone build once tree-shook every monaco-editor/features/* import.
+test('prebuilt bundle includes the suggest feature', async ({ page }) => {
+  const host = await editorReady(page, '[data-testid=editor]');
+  await typeInto(page, host, 'us');
+  await page.keyboard.press('Control+Space');
+  const suggest = host.locator('.suggest-widget');
+  await expect(suggest).toBeVisible();
+  await expect(suggest).toContainText('user');
 });
