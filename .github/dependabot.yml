@@ -1,0 +1,48 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    ignore:
+      # TypeScript 7 (Go port) is not supported by the Vue/Svelte tooling yet.
+      - dependency-name: typescript
+        versions: ['>=7']
+    groups:
+      lint:
+        patterns:
+          ['eslint*', '@eslint/*', 'typescript-eslint', 'prettier*', 'globals', '*-eslint-parser']
+      test:
+        patterns:
+          ['vitest', '@vitest/*', '@playwright/*', 'playwright', '@testing-library/*', 'happy-dom']
+      build:
+        patterns: ['vite', '@vitejs/*', '@sveltejs/*', 'vue-tsc', 'svelte-check', 'typescript']
+      frameworks:
+        patterns: ['react', 'react-dom', '@types/react*', 'vue', 'svelte', 'lit']
+      monaco:
+        patterns: ['monaco-editor']
+
+  - package-ecosystem: composer
+    directories: [/packages/laravel, /dev-server]
+    schedule:
+      interval: weekly
+    groups:
+      composer:
+        patterns: ['*']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+
+  - package-ecosystem: docker
+    directory: /docker
+    schedule:
+      interval: weekly
+    ignore:
+      # The Playwright image tag must match @playwright/test from the lockfile.
+      - dependency-name: mcr.microsoft.com/playwright
