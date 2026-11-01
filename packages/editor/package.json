@@ -1,6 +1,6 @@
 {
   "name": "@php-script/editor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Monaco based <php-script-editor> web component for php-script v2, configured by the MonarchLanguageDefinitionService.",
   "license": "MIT",
   "type": "module",
