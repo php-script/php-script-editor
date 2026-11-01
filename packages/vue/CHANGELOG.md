@@ -1,5 +1,12 @@
 # @php-script/editor-vue
 
+## 0.1.2
+
+### Patch Changes
+
+- Updated dependencies [[`e1a783f`](https://github.com/php-script/php-script-editor/commit/e1a783fc6bc22347dd6c304ae99b86404092e88a)]:
+  - @php-script/editor@0.1.2
+
 ## 0.1.1
 
 ### Patch Changes
