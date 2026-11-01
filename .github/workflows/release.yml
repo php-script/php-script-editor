@@ -32,6 +32,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # Opens a "Version packages" PR while changesets are pending, publishes once it is merged.
       # npm auth runs through trusted publishing (OIDC, id-token: write), no token secret.
+      # The trusted publishers are stage-only: `pnpm release` stages each version, and a
+      # maintainer approves it with 2FA on npmjs.com (Staged Packages) to make it public.
       - id: changesets
         uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
