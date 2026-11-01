@@ -25,7 +25,6 @@ import 'monaco-editor/features/linesOperations/register.js';
 import 'monaco-editor/features/multicursor/register.js';
 import 'monaco-editor/features/parameterHints/register.js';
 import 'monaco-editor/features/placeholderText/register.js';
-import 'monaco-editor/features/quickCommand/register.js';
 import 'monaco-editor/features/readOnlyMessage/register.js';
 import 'monaco-editor/features/smartSelect/register.js';
 import 'monaco-editor/features/snippet/register.js';
@@ -35,8 +34,9 @@ import 'monaco-editor/features/wordHighlighter/register.js';
 import 'monaco-editor/features/wordOperations/register.js';
 import 'monaco-editor/features/wordPartOperations/register.js';
 import * as monaco from 'monaco-editor/editor/editor.api.js';
-// Inlined as a blob URL: works with every bundler and from a CDN without extra config.
-import EditorWorker from 'monaco-editor/editor/editor.worker.js?worker&inline';
+// A separate file next to the chunks: cached on its own and loaded in parallel. Vite, webpack 5,
+// Rollup and esbuild resolve the emitted `new URL(…, import.meta.url)` without extra config.
+import EditorWorker from 'monaco-editor/editor/editor.worker.js?worker';
 
 type MonacoEnvironmentLike = { getWorker?: (workerId: string, label: string) => Worker };
 const scope = globalThis as typeof globalThis & { MonacoEnvironment?: MonacoEnvironmentLike };

@@ -3,7 +3,7 @@ import { PhpScriptEditor, TAG_NAME } from './php-script-editor.js';
 export * from './core.js';
 export { PhpScriptEditor, TAG_NAME } from './php-script-editor.js';
 export type { EditorLabels, PhpScriptEditorEventMap } from './php-script-editor.js';
-export { monaco } from './monaco.js';
+export { loadMonaco } from './load-monaco.js';
 export type { Monaco } from './monaco.js';
 export { ensureLanguage, toMarkers } from './language.js';
 

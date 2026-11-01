@@ -1,7 +1,8 @@
 import { LitElement, html, nothing, type PropertyDeclarations, type PropertyValues } from 'lit';
 import { ConfigError, DEFAULT_CONFIG, hashString, normalizeConfig } from './config.js';
 import { MARKER_OWNER, ensureLanguage, toMarkers } from './language.js';
-import { monaco } from './monaco.js';
+import { loadMonaco } from './load-monaco.js';
+import type { Monaco, monaco } from './monaco.js';
 import { dedent } from './text.js';
 import {
   SaveError,
@@ -90,6 +91,8 @@ function injectStyles(): void {
 }
 
 const definedThemes = new Set<string>();
+/** Monaco namespace, set once the lazy chunk has loaded. */
+let api: Monaco | null = null;
 
 /**
  * `<php-script-editor>`: Monaco editor for php-script v2.
@@ -207,9 +210,9 @@ export class PhpScriptEditor extends LitElement {
     }
   }
 
-  /** Monaco namespace used by this element. */
-  get monaco(): typeof monaco {
-    return monaco;
+  /** Monaco namespace used by this element, or null until it has loaded (see `whenReady()`). */
+  get monaco(): Monaco | null {
+    return api;
   }
 
   /** The Monaco editor instance, or null before `ps-ready`. */
@@ -364,7 +367,10 @@ export class PhpScriptEditor extends LitElement {
 
   #mount(): Promise<void> {
     this.#mounting ??= (async () => {
-      this.#resolvedConfig = await this.#loadConfig();
+      const [config, loaded] = await Promise.all([this.#loadConfig(), loadMonaco()]);
+      api = loaded;
+      const monaco = loaded;
+      this.#resolvedConfig = config;
       const container = this.querySelector<HTMLElement>('.pse-editor');
       if (!this.isConnected || !container || this.#editor) return;
 
@@ -431,8 +437,8 @@ export class PhpScriptEditor extends LitElement {
       this.#loadedConfigUrl = null;
     }
     this.#resolvedConfig = await this.#loadConfig();
-    if (this.#model)
-      monaco.editor.setModelLanguage(this.#model, ensureLanguage(monaco, this.#resolvedConfig));
+    if (this.#model && api)
+      api.editor.setModelLanguage(this.#model, ensureLanguage(api, this.#resolvedConfig));
   }
 
   /** Re-reads the theme (mode, CSS custom properties, theme object) and applies it. */
@@ -441,6 +447,8 @@ export class PhpScriptEditor extends LitElement {
   }
 
   #applyTheme(): void {
+    const monaco = api;
+    if (!monaco) return; // applied on mount once Monaco has loaded
     const theme = typeof this.theme === 'string' ? parseThemeAttribute(this.theme) : this.theme;
     const mode: ThemeMode = typeof theme === 'string' ? theme : 'auto';
     const custom: PhpScriptTheme = typeof theme === 'object' && theme ? theme : {};
@@ -529,8 +537,8 @@ export class PhpScriptEditor extends LitElement {
 
   /** Shows php-script `LintDiagnostic`s as editor markers. Pass [] to clear. */
   setDiagnostics(diagnostics: LintDiagnostic[]): void {
-    if (this.#model)
-      monaco.editor.setModelMarkers(this.#model, MARKER_OWNER, toMarkers(monaco, diagnostics));
+    if (this.#model && api)
+      api.editor.setModelMarkers(this.#model, MARKER_OWNER, toMarkers(api, diagnostics));
     this.#emit('ps-diagnostics', { diagnostics });
   }
 

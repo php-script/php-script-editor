@@ -118,7 +118,7 @@ describe('<php-script-editor>', () => {
     await expect(el.save()).rejects.toThrow('Unexpected token');
     expect(el.status).toBe('error');
     expect(error).toHaveBeenCalledOnce();
-    const markers = el.monaco.editor.getModelMarkers({ resource: el.editor!.getModel()!.uri });
+    const markers = el.monaco!.editor.getModelMarkers({ resource: el.editor!.getModel()!.uri });
     expect(markers[0]).toMatchObject({ startColumn: 6, message: 'Unexpected token' });
   });
 
