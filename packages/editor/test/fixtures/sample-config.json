@@ -1,0 +1,275 @@
+{
+  "definition": {
+    "keywords": [
+      "if",
+      "else",
+      "for",
+      "foreach",
+      "as",
+      "echo",
+      "return",
+      "true",
+      "false",
+      "null",
+      "LINEBREAK"
+    ],
+    "loopKeywords": ["break", "continue"],
+    "allowedFunctions": ["strtoupper", "strtolower", "count", "round", "implode", "str_contains"],
+    "contextVariables": ["user", "items", "taxRate"],
+    "operators": [
+      "==",
+      "===",
+      "!=",
+      "!==",
+      "=",
+      ".",
+      "+",
+      "-",
+      "*",
+      "/",
+      "%",
+      ">",
+      "<",
+      ">=",
+      "<=",
+      "&&",
+      "||",
+      "!",
+      "++",
+      "--",
+      ":"
+    ],
+    "symbols": "[=><!~?&|+\\-*/^%.,;()\\{}\\[\\]]",
+    "tokenizer": {
+      "root": [
+        [
+          "[a-zA-Z_]\\w*",
+          {
+            "cases": {
+              "@keywords": "keyword",
+              "@loopKeywords": "keyword",
+              "@allowedFunctions": "predefined",
+              "@contextVariables": "variable.predefined",
+              "@default": "identifier"
+            }
+          }
+        ],
+        {
+          "include": "@whitespace"
+        },
+        ["[{}()\\[\\]]", "@brackets"],
+        ["[<>](?!@symbols)", "@brackets"],
+        [
+          "@symbols",
+          {
+            "cases": {
+              "@operators": "operator",
+              "@default": ""
+            }
+          }
+        ],
+        ["\\d+(\\.\\d+)?", "number"],
+        ["\"", "string.quote", "@string_double"],
+        ["'", "string.quote", "@string_single"]
+      ],
+      "whitespace": [
+        ["[ \\t\\r\\n]+", ""],
+        ["\\/\\/.*$", "comment"]
+      ],
+      "string_double": [
+        ["[^\\\\\"]+", "string"],
+        ["\\\\.", "string.escape"],
+        ["\"", "string.quote", "@pop"]
+      ],
+      "string_single": [
+        ["[^\\\\']+", "string"],
+        ["\\\\.", "string.escape"],
+        ["'", "string.quote", "@pop"]
+      ]
+    }
+  },
+  "completions": {
+    "globalFunctions": [
+      {
+        "label": "strtoupper",
+        "kind": "Function",
+        "detail": "strtoupper(string $string): string",
+        "doc": "",
+        "snippet": "strtoupper(${1:string})"
+      },
+      {
+        "label": "strtolower",
+        "kind": "Function",
+        "detail": "strtolower(string $string): string",
+        "doc": "",
+        "snippet": "strtolower(${1:string})"
+      },
+      {
+        "label": "count",
+        "kind": "Function",
+        "detail": "count(Countable|array $value, int $mode = ...): int",
+        "doc": "",
+        "snippet": "count(${1:value}, ${2:mode})"
+      },
+      {
+        "label": "round",
+        "kind": "Function",
+        "detail": "round(int|float $num, int $precision = ..., RoundingMode|int $mode = ...): float",
+        "doc": "",
+        "snippet": "round(${1:num}, ${2:precision}, ${3:mode})"
+      },
+      {
+        "label": "implode",
+        "kind": "Function",
+        "detail": "implode(array|string $separator, ?array $array = ...): string",
+        "doc": "",
+        "snippet": "implode(${1:separator}, ${2:array})"
+      },
+      {
+        "label": "str_contains",
+        "kind": "Function",
+        "detail": "str_contains(string $haystack, string $needle): bool",
+        "doc": "",
+        "snippet": "str_contains(${1:haystack}, ${2:needle})"
+      }
+    ],
+    "globalVariables": [
+      {
+        "label": "user",
+        "kind": "Variable",
+        "detail": "DevServer\\User",
+        "doc": "The signed-in user"
+      },
+      {
+        "label": "items",
+        "kind": "Variable",
+        "detail": "array",
+        "doc": "A list of numbers"
+      },
+      {
+        "label": "taxRate",
+        "kind": "Variable",
+        "detail": "double",
+        "doc": "VAT rate"
+      }
+    ],
+    "classes": {
+      "DevServer\\Address": {
+        "properties": [
+          {
+            "label": "city",
+            "kind": "Property",
+            "detail": "string",
+            "doc": ""
+          },
+          {
+            "label": "zip",
+            "kind": "Property",
+            "detail": "string",
+            "doc": ""
+          }
+        ],
+        "methods": []
+      },
+      "DevServer\\User": {
+        "properties": [
+          {
+            "label": "address",
+            "kind": "Property",
+            "detail": "DevServer\\Address",
+            "doc": ""
+          },
+          {
+            "label": "name",
+            "kind": "Property",
+            "detail": "string",
+            "doc": ""
+          },
+          {
+            "label": "age",
+            "kind": "Property",
+            "detail": "int",
+            "doc": ""
+          }
+        ],
+        "methods": [
+          {
+            "label": "greet",
+            "kind": "Method",
+            "detail": "greet(string $greeting = ...): string",
+            "doc": "Full greeting for the user.",
+            "snippet": "greet(${1:greeting})"
+          },
+          {
+            "label": "isAdult",
+            "kind": "Method",
+            "detail": "isAdult(): bool",
+            "doc": "",
+            "snippet": "isAdult()"
+          },
+          {
+            "label": "address",
+            "kind": "Method",
+            "detail": "address(): DevServer\\Address",
+            "doc": "",
+            "snippet": "address()"
+          }
+        ]
+      }
+    },
+    "controlFlows": [
+      {
+        "label": "for",
+        "kind": "Snippet",
+        "snippet": "for (${1:i} = ${2:0}; ${1} < ${3:count}(${4}); ${1}++) {\n    $0\n}",
+        "doc": "For-Loop",
+        "detail": "for (int $i = 0; $i < count($items); $i++) {"
+      },
+      {
+        "label": "foreach",
+        "kind": "Snippet",
+        "snippet": "foreach (${1:items} as ${2:item}) {\n    $0\n}",
+        "doc": "Foreach-Loop",
+        "detail": "foreach ($items as $item) {"
+      },
+      {
+        "label": "foreach (key, value)",
+        "kind": "Snippet",
+        "snippet": "foreach (${1:map} as ${2:key}, ${3:value}) {\n    $0\n}",
+        "doc": "Foreach-Loop for Key/Value Pairs",
+        "detail": "foreach ($map as $key => $value) {"
+      },
+      {
+        "label": "if",
+        "kind": "Snippet",
+        "snippet": "if (${1:condition}) {\n    $0\n}",
+        "doc": "If-Condition",
+        "detail": "if ($condition) {"
+      },
+      {
+        "label": "ifelse",
+        "kind": "Snippet",
+        "snippet": "if (${1:condition}) {\n    $2\n} else {\n    $0\n}",
+        "doc": "If-Else-Condition",
+        "detail": "if ($condition) { ... } else { ... }"
+      }
+    ],
+    "loopControls": [
+      {
+        "label": "break 2",
+        "kind": "Snippet",
+        "snippet": "break ${1:2};",
+        "doc": "Break from nested loops",
+        "detail": "break N;"
+      },
+      {
+        "label": "continue 2",
+        "kind": "Snippet",
+        "snippet": "continue ${1:2};",
+        "doc": "Continue outer loop from nested loops",
+        "detail": "continue N;"
+      }
+    ],
+    "loopKeywords": ["break", "continue"]
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "name": "@php-script/editor",
+  "version": "2.0.0",
+  "description": "Monaco based <php-script-editor> web component for php-script v2, configured by the MonarchLanguageDefinitionService.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "./dist/index.js",
+    "./dist/standalone/*",
+    "*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/types/core.d.ts",
+      "import": "./dist/core.js"
+    },
+    "./standalone": {
+      "import": "./dist/standalone/php-script-editor.js"
+    },
+    "./standalone/php-script-editor.js": "./dist/standalone/php-script-editor.js",
+    "./package.json": "./package.json"
+  },
+  "types": "./dist/types/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "vite build && vite build --mode standalone && tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "lit": "^3.3.3"
+  },
+  "peerDependencies": {
+    "monaco-editor": ">=0.55.0 <1.0.0"
+  },
+  "devDependencies": {
+    "@vitest/browser-playwright": "^5.0.5",
+    "happy-dom": "^21.0.4",
+    "monaco-editor": "^0.57.0",
+    "playwright": "^1.64.1",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.5",
+    "vite-plugin-css-injected-by-js": "^5.0.3",
+    "vitest": "^5.0.5"
+  },
+  "keywords": [
+    "php-script",
+    "monaco",
+    "web-component",
+    "lit",
+    "editor"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/php-script/php-script-editor.git",
+    "directory": "packages/editor"
+  }
+}
