@@ -17,7 +17,6 @@ export default tseslint.config(
       'dev-server/storage/**',
       'playground/test-results/**',
       'playground/playwright-report/**',
-      'examples/**',
       'docs/_site/**',
       'docs/.jekyll-cache/**',
       'docs/vendor/**',
