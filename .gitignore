@@ -64,3 +64,6 @@ playground/blob-report/
 
 # SvelteKit packaging cache
 .svelte-kit/
+
+# pnpm store created by containers that mount the repo
+.pnpm-store/

@@ -9,6 +9,7 @@ const phpServer = process.env.PHP_SERVER;
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: 'laravel.spec.ts', // needs the Laravel demo: playwright.laravel.config.ts
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,

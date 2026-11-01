@@ -2,7 +2,9 @@
 #
 #   docker compose up                      # dev server (PHP :8080) + playground (:5173)
 #   docker compose run --rm test           # vitest (unit + browser) and Playwright e2e
-#   docker compose run --rm test-php       # Pest tests of packages/laravel
+#   docker compose run --rm test-php       # Pest tests of packages/laravel and packages/filament
+#   docker compose up -d laravel           # generated Laravel 13 + Filament 5 demo on :8000
+#   docker compose run --rm test-laravel   # Playwright e2e against the demo
 #
 # node_modules and vendor live in named volumes, so host (macOS) and container (Linux)
 # installs never clash.
@@ -36,6 +38,7 @@ x-php: &php
     - composer-cache:/composer
     - vendor-dev-server:/app/dev-server/vendor
     - vendor-laravel:/app/packages/laravel/vendor
+    - vendor-filament:/app/packages/filament/vendor
 
 services:
   php:
@@ -67,6 +70,55 @@ services:
     depends_on:
       php:
         condition: service_healthy
+    # Vite only starts after the entrypoint's `pnpm build`, so healthy = editor dist built.
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:5173/').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
+      interval: 3s
+      timeout: 3s
+      retries: 100
+      start_period: 300s
+
+  # Laravel 13 + Filament 5 demo using packages/laravel and packages/filament (path repositories).
+  # http://localhost:8000 (LARAVEL_PORT), http://laravel.php-script-editor.orb.local (OrbStack).
+  # admin@example.com / password; /admin signs guests in automatically (DEMO_AUTO_LOGIN).
+  laravel:
+    <<: *php
+    # Generates a Laravel 13 + Filament 5 app into the demo-laravel-app volume (first start only),
+    # applies demo/laravel-overlay and serves it. Start over: docker compose rm -sf laravel &&
+    # docker volume rm php-script-editor_demo-laravel-app
+    working_dir: /srv
+    command: sh /app/docker/laravel-setup.sh
+    volumes:
+      - .:/app
+      - composer-cache:/composer
+      - vendor-laravel:/app/packages/laravel/vendor
+      - vendor-filament:/app/packages/filament/vendor
+      - demo-laravel-app:/srv
+    environment:
+      PHP_CLI_SERVER_WORKERS: 8
+    ports:
+      - '${LARAVEL_PORT:-8000}:8000'
+    depends_on:
+      playground:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'php',
+          '-r',
+          "exit(@file_get_contents('http://127.0.0.1:8000/up') === false ? 1 : 0);",
+        ]
+      interval: 3s
+      timeout: 3s
+      retries: 60
+      start_period: 180s
 
   test:
     <<: *node
@@ -79,8 +131,27 @@ services:
   test-php:
     <<: *php
     profiles: [test]
-    working_dir: /app/packages/laravel
-    command: sh -c "composer install --no-interaction --no-progress && composer test"
+    working_dir: /app/packages
+    # Both packages; stale compiled testbench views break after dependency changes.
+    command: >-
+      sh -c 'set -e; for p in laravel filament; do
+      echo "== packages/$$p"; cd /app/packages/$$p;
+      composer install --no-interaction --no-progress;
+      rm -f vendor/orchestra/testbench-core/laravel/storage/framework/views/*.php;
+      composer test; done'
+
+  test-laravel:
+    <<: *node
+    profiles: [test]
+    entrypoint: []
+    working_dir: /app/playground
+    # node_modules are installed by the playground entrypoint (laravel depends on it).
+    command: pnpm exec playwright test -c playwright.laravel.config.ts
+    environment:
+      LARAVEL_URL: http://laravel:8000
+    depends_on:
+      laravel:
+        condition: service_healthy
 
 volumes:
   pnpm-store:
@@ -93,3 +164,5 @@ volumes:
   node_modules-playground:
   vendor-dev-server:
   vendor-laravel:
+  vendor-filament:
+  demo-laravel-app:
