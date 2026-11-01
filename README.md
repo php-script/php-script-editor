@@ -14,7 +14,7 @@ with thin wrappers for React, Vue and Svelte and an integration package for Lara
 - **Themes.** Built-in light and dark themes, an `auto` mode (follows `html.dark`, `data-theme` or
   the OS), and an external theme set through CSS custom properties or a theme object.
 - **Works in forms.** The element is a form-associated custom element (`name`, reset, disabled).
-- **Ships two ways.** An ES module with `lit` and `monaco-editor` as peers for bundlers, and a
+- **Ships two ways.** An ES module for bundlers (`lit` as a dependency, `monaco-editor` as a peer), and a
   standalone build for Blade, Alpine and Livewire, served from your own app.
 - **Loads Monaco lazily.** The element is small; Monaco is imported when the first editor connects,
   and its worker is a separate file.

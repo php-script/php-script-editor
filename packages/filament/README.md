@@ -63,7 +63,7 @@ Theming (CSS custom properties mapped to the panel palette) is described in the
 
 This package lives in `packages/filament` of the php-script-editor monorepo and requires
 `php-script/editor-laravel` from `../laravel` through a composer path repository. Composer ignores `repositories` and the
-`@dev` flag outside the root package, so a released split resolves `php-script/editor-laravel` ^2.0 from Packagist.
+`@dev` flag outside the root package, so a released split resolves `php-script/editor-laravel` ^0.1 from Packagist.
 
 ```bash
 composer install
