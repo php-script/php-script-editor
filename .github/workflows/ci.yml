@@ -68,11 +68,17 @@ jobs:
   php:
     name: ${{ matrix.package }} package (PHP ${{ matrix.php }})
     runs-on: ubuntu-latest
+    # PHP 8.6 is unreleased: run it to see breakage early, but don't fail the build.
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         package: [laravel, filament]
         php: ['8.4', '8.5']
+        experimental: [false]
+        include:
+          - { package: laravel, php: '8.6', experimental: true }
+          - { package: filament, php: '8.6', experimental: true }
     defaults:
       run:
         working-directory: packages/${{ matrix.package }}
@@ -85,4 +91,7 @@ jobs:
           tools: composer:v2
           coverage: none
       - run: composer install --no-interaction --no-progress
+        env:
+          # Dependencies don't allow 8.6 yet.
+          COMPOSER_IGNORE_PLATFORM_REQ: ${{ matrix.experimental && 'php+' || '' }}
       - run: composer test
