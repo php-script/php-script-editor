@@ -43,7 +43,7 @@ if [ ! -f "$APP/artisan" ]; then
   composer require --no-interaction --no-progress --no-update 'php:^8.5'
   composer require --no-interaction --no-progress -W \
     'filament/filament:^5.0' 'php-script/php-script:^2.0' \
-    'php-script/editor-laravel:^0.1@dev' 'php-script/editor-filament:^0.1@dev'
+    'php-script/editor-laravel:^0.1' 'php-script/editor-filament:^0.1'
   php artisan filament:install --panels --no-interaction
   cd /
   [ ! -d "$APP" ] || rmdir "$APP" # empty leftover, e.g. a working_dir created by Docker
