@@ -1,11 +1,25 @@
 name: Split composer packages
 
 # Mirrors the composer packages into read-only repositories for Packagist.
-# main updates dev-main; a release tag "@php-script/editor@X.Y.Z" becomes "vX.Y.Z".
+# A push to main updates dev-main. release.yml calls this with a version after publishing,
+# because tags created with GITHUB_TOKEN do not trigger other workflows.
 on:
   push:
     branches: [main]
-    tags: ['@php-script/editor@*']
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: true
+    secrets:
+      SPLIT_TOKEN:
+        required: true
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to tag in the split repositories, e.g. 2.0.1 (empty = branch only)
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -25,10 +39,9 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - id: version
-        if: startsWith(github.ref, 'refs/tags/')
         env:
-          REF_NAME: ${{ github.ref_name }}
-        run: echo "tag=v${REF_NAME##*@}" >> "$GITHUB_OUTPUT"
+          VERSION: ${{ inputs.version }}
+        run: echo "tag=${VERSION:+v$VERSION}" >> "$GITHUB_OUTPUT"
       - uses: danharrin/monorepo-split-github-action@14e42e2437f674b8987c1f50ca3689116aea1893 # v2.4.5
         env:
           GITHUB_TOKEN: ${{ secrets.SPLIT_TOKEN }}
