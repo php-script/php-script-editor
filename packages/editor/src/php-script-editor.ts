@@ -592,5 +592,7 @@ declare global {
   interface HTMLElementTagNameMap {
     'php-script-editor': PhpScriptEditor;
   }
+  // Declaration merging adds the editor events to addEventListener typings.
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   interface HTMLElementEventMap extends PhpScriptEditorEventMap {}
 }

@@ -3,7 +3,9 @@ import { dedent } from '../../src/text.js';
 
 describe('dedent', () => {
   it('removes shared indentation and blank edge lines', () => {
-    expect(dedent('\n      if (a) {\n        echo a;\n      }\n    ')).toBe('if (a) {\n  echo a;\n}');
+    expect(dedent('\n      if (a) {\n        echo a;\n      }\n    ')).toBe(
+      'if (a) {\n  echo a;\n}',
+    );
   });
   it('keeps single-line and unindented text', () => {
     expect(dedent('echo 1;')).toBe('echo 1;');

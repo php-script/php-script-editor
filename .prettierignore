@@ -12,3 +12,5 @@ dev-server/storage/
 .claude/
 *.min.js
 .svelte-kit/
+examples/
+**/composer.json

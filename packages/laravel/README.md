@@ -35,15 +35,15 @@ php artisan vendor:publish --tag=php-script-editor-assets --force
 The file is also published with Laravel's `laravel-assets` tag, so the usual
 `"post-update-cmd": ["@php artisan vendor:publish --tag=laravel-assets --ansi --force"]` keeps it up to date.
 
-| `config/php-script-editor.php` | |
-| --- | --- |
-| `asset` | `auto` (published file if present, CDN otherwise), `published` or `cdn` |
-| `asset_url` | Explicit URL, wins over everything (e.g. your own Vite build) |
-| `cdn_url` | Default `https://cdn.jsdelivr.net/npm/@php-script/editor@2/dist/standalone/php-script-editor.js` |
-| `inject_script` | The Blade component adds the `<script type="module">` tag itself, once per request (default `true`) |
-| `theme` | Default theme: `light`, `dark` or `auto` (follows `html.dark`) |
-| `height` | Default height (any CSS length) |
-| `lint_delay` | Debounce of `lint-url` requests in ms |
+| `config/php-script-editor.php` |                                                                                                     |
+| ------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `asset`                        | `auto` (published file if present, CDN otherwise), `published` or `cdn`                             |
+| `asset_url`                    | Explicit URL, wins over everything (e.g. your own Vite build)                                       |
+| `cdn_url`                      | Default `https://cdn.jsdelivr.net/npm/@php-script/editor@2/dist/standalone/php-script-editor.js`    |
+| `inject_script`                | The Blade component adds the `<script type="module">` tag itself, once per request (default `true`) |
+| `theme`                        | Default theme: `light`, `dark` or `auto` (follows `html.dark`)                                      |
+| `height`                       | Default height (any CSS length)                                                                     |
+| `lint_delay`                   | Debounce of `lint-url` requests in ms                                                               |
 
 If you bundle the editor yourself (`npm i @php-script/editor monaco-editor`, `import '@php-script/editor'`),
 set `inject_script` to `false`.
@@ -89,21 +89,21 @@ $this->app->bind(Engine::class, fn () => new Engine()->allow('strtoupper')->set(
 
 Inside a normal `<form>` the element is form-associated: the script is submitted as `content`.
 
-| Prop | Element attribute | |
-| --- | --- | --- |
-| `name` | `name` | Form field name |
-| `value` | `value` | Initial script |
-| `config` | `config` | `Engine` (converted with `EditorConfig::fromEngine()`), `EditorConfig` or array |
-| `config-url` | `config-url` | Load the config from an endpoint instead of inlining it |
-| `save-url`, `save-method`, `save-field`, `:save-headers`, `:save-payload` | same | Built-in save toolbar (`Ctrl/Cmd+S`) |
-| `persisted` | `persisted` | Script exists already: save with `PUT` (default: `true` when `value` is not empty) |
-| `csrf-token` | `csrf-token` | Defaults to `<meta name="csrf-token">` |
-| `lint-url`, `:lint-delay` | same | Live diagnostics while typing |
-| `theme` | `theme` | `light`, `dark`, `auto` or a theme array (JSON encoded) |
-| `readonly`, `no-toolbar`, `no-save-shortcut` | same | |
-| `height` | `style="--php-script-editor-height: …"` | CSS length, integers are pixels |
-| `:options`, `:labels` | same | Monaco options / toolbar labels (JSON encoded) |
-| `:script="false"` | | Do not render the script tag for this editor |
+| Prop                                                                      | Element attribute                       |                                                                                    |
+| ------------------------------------------------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------- |
+| `name`                                                                    | `name`                                  | Form field name                                                                    |
+| `value`                                                                   | `value`                                 | Initial script                                                                     |
+| `config`                                                                  | `config`                                | `Engine` (converted with `EditorConfig::fromEngine()`), `EditorConfig` or array    |
+| `config-url`                                                              | `config-url`                            | Load the config from an endpoint instead of inlining it                            |
+| `save-url`, `save-method`, `save-field`, `:save-headers`, `:save-payload` | same                                    | Built-in save toolbar (`Ctrl/Cmd+S`)                                               |
+| `persisted`                                                               | `persisted`                             | Script exists already: save with `PUT` (default: `true` when `value` is not empty) |
+| `csrf-token`                                                              | `csrf-token`                            | Defaults to `<meta name="csrf-token">`                                             |
+| `lint-url`, `:lint-delay`                                                 | same                                    | Live diagnostics while typing                                                      |
+| `theme`                                                                   | `theme`                                 | `light`, `dark`, `auto` or a theme array (JSON encoded)                            |
+| `readonly`, `no-toolbar`, `no-save-shortcut`                              | same                                    |                                                                                    |
+| `height`                                                                  | `style="--php-script-editor-height: …"` | CSS length, integers are pixels                                                    |
+| `:options`, `:labels`                                                     | same                                    | Monaco options / toolbar labels (JSON encoded)                                     |
+| `:script="false"`                                                         |                                         | Do not render the script tag for this editor                                       |
 
 Every other attribute (`class`, `id`, `wire:*`, `x-*`, `data-*` …) is passed through.
 
@@ -215,16 +215,16 @@ PhpScriptEditor::make('script')
     ->columnSpanFull();
 ```
 
-| Method | |
-| --- | --- |
-| `engine(Engine\|Closure)` | Config and validation engine |
-| `editorConfig(EditorConfig\|array\|Closure)` | Explicit config instead of `engine()` |
-| `configUrl(string\|Closure)` | Load the config via URL (not inlined into the page) |
-| `lintUrl()`, `lintDelay()` | Live diagnostics |
-| `validateScript(bool\|Closure = true)` | Adds the `ValidPhpScript` rule |
-| `theme()`, `height()`, `editorOptions()`, `labels()` | |
-| `disabled()`, `readOnly()` | Both make the editor read-only |
-| `live()`, `live(onBlur: true)`, `live(debounce: 500)` | Respected like other Filament fields |
+| Method                                                |                                                     |
+| ----------------------------------------------------- | --------------------------------------------------- |
+| `engine(Engine\|Closure)`                             | Config and validation engine                        |
+| `editorConfig(EditorConfig\|array\|Closure)`          | Explicit config instead of `engine()`               |
+| `configUrl(string\|Closure)`                          | Load the config via URL (not inlined into the page) |
+| `lintUrl()`, `lintDelay()`                            | Live diagnostics                                    |
+| `validateScript(bool\|Closure = true)`                | Adds the `ValidPhpScript` rule                      |
+| `theme()`, `height()`, `editorOptions()`, `labels()`  |                                                     |
+| `disabled()`, `readOnly()`                            | Both make the editor read-only                      |
+| `live()`, `live(onBlur: true)`, `live(debounce: 500)` | Respected like other Filament fields                |
 
 The field has no save toolbar; the form saves the state.
 
@@ -258,32 +258,32 @@ in your panel theme CSS:
 
 ```css
 php-script-editor {
-    --php-script-editor-radius: var(--radius-lg);
-    --php-script-editor-border: var(--gray-200);
-    --php-script-editor-background: var(--color-white);
-    --php-script-editor-foreground: var(--gray-950);
-    --php-script-editor-line-highlight: var(--gray-50);
-    --php-script-editor-line-number: var(--gray-400);
-    --php-script-editor-selection: var(--primary-200);
-    --php-script-editor-cursor: var(--primary-600);
-    --php-script-editor-accent: var(--primary-600);
-    --php-script-editor-focus-ring: var(--primary-600);
-    --php-script-editor-danger: var(--danger-600);
-    --php-script-editor-success: var(--success-600);
-    --php-script-editor-token-keyword: var(--primary-700);
+  --php-script-editor-radius: var(--radius-lg);
+  --php-script-editor-border: var(--gray-200);
+  --php-script-editor-background: var(--color-white);
+  --php-script-editor-foreground: var(--gray-950);
+  --php-script-editor-line-highlight: var(--gray-50);
+  --php-script-editor-line-number: var(--gray-400);
+  --php-script-editor-selection: var(--primary-200);
+  --php-script-editor-cursor: var(--primary-600);
+  --php-script-editor-accent: var(--primary-600);
+  --php-script-editor-focus-ring: var(--primary-600);
+  --php-script-editor-danger: var(--danger-600);
+  --php-script-editor-success: var(--success-600);
+  --php-script-editor-token-keyword: var(--primary-700);
 }
 
 .dark php-script-editor {
-    --php-script-editor-border: color-mix(in oklab, var(--color-white) 10%, transparent);
-    --php-script-editor-background: var(--gray-900);
-    --php-script-editor-foreground: var(--color-white);
-    --php-script-editor-line-highlight: var(--gray-800);
-    --php-script-editor-line-number: var(--gray-500);
-    --php-script-editor-selection: var(--primary-800);
-    --php-script-editor-cursor: var(--primary-400);
-    --php-script-editor-accent: var(--primary-500);
-    --php-script-editor-focus-ring: var(--primary-500);
-    --php-script-editor-token-keyword: var(--primary-400);
+  --php-script-editor-border: color-mix(in oklab, var(--color-white) 10%, transparent);
+  --php-script-editor-background: var(--gray-900);
+  --php-script-editor-foreground: var(--color-white);
+  --php-script-editor-line-highlight: var(--gray-800);
+  --php-script-editor-line-number: var(--gray-500);
+  --php-script-editor-selection: var(--primary-800);
+  --php-script-editor-cursor: var(--primary-400);
+  --php-script-editor-accent: var(--primary-500);
+  --php-script-editor-focus-ring: var(--primary-500);
+  --php-script-editor-token-keyword: var(--primary-400);
 }
 ```
 
