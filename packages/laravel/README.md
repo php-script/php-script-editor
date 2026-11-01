@@ -1,12 +1,12 @@
 # php-script/editor-laravel
 
-Laravel and [Filament](https://filamentphp.com) integration for the `<php-script-editor>` web component
+Laravel integration for the `<php-script-editor>` web component
 (Monaco based editor for [php-script](https://github.com/php-script/php-script) v2).
 
 - `EditorConfig`: the `{definition, completions}` JSON the editor needs, built from your `Engine`
 - `LintResponse` and the `ValidPhpScript` rule: lint endpoints and validation with the engine's linter
 - `<x-php-script-editor>` Blade component and `@phpScriptEditorScripts` directive
-- `PhpScriptEditor` Filament form field (optional, Filament v4 or v5)
+- Filament 5 form field: separate package [`php-script/editor-filament`](../filament/README.md)
 
 Requirements: PHP 8.4+ (required by php-script v2), Laravel 12 or 13, php-script ^2.0.
 
@@ -25,19 +25,23 @@ php artisan vendor:publish --tag=php-script-editor-config
 ### The editor script
 
 The editor is a single ES module (Monaco, Lit and CSS bundled, about 3.4 MB, about 900 KB gzipped).
-By default (`'asset' => 'auto'`) it is loaded from your app when published, otherwise from jsDelivr:
+By default (`'asset' => 'published'`) it is served from your app. Publish it:
 
 ```bash
 php artisan vendor:publish --tag=php-script-editor-assets --force
 # -> public/vendor/php-script-editor/php-script-editor.js
 ```
 
+There is no silent CDN fallback. If the file is missing, rendering throws a `MissingEditorAssetException`
+with the publish command when `APP_DEBUG` is on; with debug off the exception is reported and the (broken)
+published URL is used. Loading from jsDelivr is opt-in: `PHP_SCRIPT_EDITOR_ASSET=cdn` (or `'asset' => 'cdn'`).
+
 The file is also published with Laravel's `laravel-assets` tag, so the usual
 `"post-update-cmd": ["@php artisan vendor:publish --tag=laravel-assets --ansi --force"]` keeps it up to date.
 
 | `config/php-script-editor.php` |                                                                                                     |
 | ------------------------------ | --------------------------------------------------------------------------------------------------- |
-| `asset`                        | `auto` (published file if present, CDN otherwise), `published` or `cdn`                             |
+| `asset`                        | `published` (default, `PHP_SCRIPT_EDITOR_ASSET`) or `cdn` (explicit opt-in)                         |
 | `asset_url`                    | Explicit URL, wins over everything (e.g. your own Vite build)                                       |
 | `cdn_url`                      | Default `https://cdn.jsdelivr.net/npm/@php-script/editor@2/dist/standalone/php-script-editor.js`    |
 | `inject_script`                | The Blade component adds the `<script type="module">` tag itself, once per request (default `true`) |
@@ -89,21 +93,21 @@ $this->app->bind(Engine::class, fn () => new Engine()->allow('strtoupper')->set(
 
 Inside a normal `<form>` the element is form-associated: the script is submitted as `content`.
 
-| Prop                                                                      | Element attribute                       |                                                                                    |
-| ------------------------------------------------------------------------- | --------------------------------------- | ---------------------------------------------------------------------------------- |
-| `name`                                                                    | `name`                                  | Form field name                                                                    |
-| `value`                                                                   | `value`                                 | Initial script                                                                     |
-| `config`                                                                  | `config`                                | `Engine` (converted with `EditorConfig::fromEngine()`), `EditorConfig` or array    |
-| `config-url`                                                              | `config-url`                            | Load the config from an endpoint instead of inlining it                            |
-| `save-url`, `save-method`, `save-field`, `:save-headers`, `:save-payload` | same                                    | Built-in save toolbar (`Ctrl/Cmd+S`)                                               |
-| `persisted`                                                               | `persisted`                             | Script exists already: save with `PUT` (default: `true` when `value` is not empty) |
-| `csrf-token`                                                              | `csrf-token`                            | Defaults to `<meta name="csrf-token">`                                             |
-| `lint-url`, `:lint-delay`                                                 | same                                    | Live diagnostics while typing                                                      |
-| `theme`                                                                   | `theme`                                 | `light`, `dark`, `auto` or a theme array (JSON encoded)                            |
-| `readonly`, `no-toolbar`, `no-save-shortcut`                              | same                                    |                                                                                    |
-| `height`                                                                  | `style="--php-script-editor-height: …"` | CSS length, integers are pixels                                                    |
-| `:options`, `:labels`                                                     | same                                    | Monaco options / toolbar labels (JSON encoded)                                     |
-| `:script="false"`                                                         |                                         | Do not render the script tag for this editor                                       |
+| Prop                                                                      | Element attribute                       |                                                                                 |
+| ------------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------- |
+| `name`                                                                    | `name`                                  | Form field name                                                                 |
+| `value`                                                                   | `value`                                 | Initial script                                                                  |
+| `config`                                                                  | `config`                                | `Engine` (converted with `EditorConfig::fromEngine()`), `EditorConfig` or array |
+| `config-url`                                                              | `config-url`                            | Load the config from an endpoint instead of inlining it                         |
+| `save-url`, `save-method`, `save-field`, `:save-headers`, `:save-payload` | same                                    | Built-in save toolbar (`Ctrl/Cmd+S`)                                            |
+| `persisted`                                                               | `persisted`                             | `false` saves with `POST` first (default: `true` when `value` is not empty)     |
+| `csrf-token`                                                              | `csrf-token`                            | Defaults to `<meta name="csrf-token">`                                          |
+| `lint-url`, `:lint-delay`                                                 | same                                    | Live diagnostics while typing                                                   |
+| `theme`                                                                   | `theme`                                 | `light`, `dark`, `auto` or a theme array (JSON encoded)                         |
+| `readonly`, `no-toolbar`, `no-save-shortcut`                              | same                                    |                                                                                 |
+| `height`                                                                  | `style="--php-script-editor-height: …"` | CSS length, integers are pixels                                                 |
+| `:options`, `:labels`                                                     | same                                    | Monaco options / toolbar labels (JSON encoded)                                  |
+| `:script="false"`                                                         |                                         | Do not render the script tag for this editor                                    |
 
 Every other attribute (`class`, `id`, `wire:*`, `x-*`, `data-*` …) is passed through.
 
@@ -192,41 +196,8 @@ fails with the first error message and ignores warnings and empty values (combin
 
 ## Filament
 
-Requires `filament/filament` ^4.0 or ^5.0. The editor module is registered as a Filament asset that is only loaded
-on pages that show the field (`loadedOnRequest()`). Publish it with the other Filament assets:
-
-```bash
-php artisan filament:assets   # -> public/js/php-script/editor-laravel/php-script-editor.js
-```
-
-Until then (or if the package was installed without the built file), the field loads it from the CDN.
-
-```php
-use PhpScript\Core\Engine;
-use PhpScript\Editor\Laravel\Filament\PhpScriptEditor;
-
-PhpScriptEditor::make('script')
-    ->engine(fn () => app(Engine::class))  // language definition and completions
-    ->validateScript()                      // ValidPhpScript with the same engine
-    ->height('24rem')
-    ->theme('auto')                         // follows Filament's dark mode
-    ->lintUrl(route('scripts.lint'))        // optional live diagnostics
-    ->editorOptions(['minimap' => ['enabled' => true]])
-    ->columnSpanFull();
-```
-
-| Method                                                |                                                     |
-| ----------------------------------------------------- | --------------------------------------------------- |
-| `engine(Engine\|Closure)`                             | Config and validation engine                        |
-| `editorConfig(EditorConfig\|array\|Closure)`          | Explicit config instead of `engine()`               |
-| `configUrl(string\|Closure)`                          | Load the config via URL (not inlined into the page) |
-| `lintUrl()`, `lintDelay()`                            | Live diagnostics                                    |
-| `validateScript(bool\|Closure = true)`                | Adds the `ValidPhpScript` rule                      |
-| `theme()`, `height()`, `editorOptions()`, `labels()`  |                                                     |
-| `disabled()`, `readOnly()`                            | Both make the editor read-only                      |
-| `live()`, `live(onBlur: true)`, `live(debounce: 500)` | Respected like other Filament fields                |
-
-The field has no save toolbar; the form saves the state.
+The Filament 5 form field lives in its own package,
+[`php-script/editor-filament`](../filament/README.md) (`composer require php-script/editor-filament`).
 
 ## Livewire (without Filament)
 
@@ -312,8 +283,8 @@ pnpm --filter @php-script/editor build
 cp packages/editor/dist/standalone/php-script-editor.js packages/laravel/resources/dist/
 ```
 
-`resources/dist/` is git-ignored: the built module has to be added in the release step. Without it the package
-still works and loads the editor from the CDN (the `php-script-editor-assets` publish tag is then not offered).
+`resources/dist/` is git-ignored: the built module has to be added in the release step. Without it the
+`php-script-editor-assets` publish tag is not offered; use `PHP_SCRIPT_EDITOR_ASSET=cdn` or `asset_url`.
 
 Packagist needs the package at the root of a repository: releases are published through a subtree split of
 `packages/laravel` into a separate repository (e.g. `php-script/editor-laravel`) that also contains the built

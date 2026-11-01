@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhpScript\Editor\Laravel\Tests\Fixtures;
+namespace PhpScript\Editor\Filament\Tests\Fixtures;
 
 use Closure;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -11,7 +11,7 @@ use Filament\Schemas\Concerns\InteractsWithSchemas;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Schemas\Schema;
 use Livewire\Component;
-use PhpScript\Editor\Laravel\Filament\PhpScriptEditor;
+use PhpScript\Editor\Filament\PhpScriptEditor;
 
 class ScriptForm extends Component implements HasSchemas
 {

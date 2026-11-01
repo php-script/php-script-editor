@@ -36,6 +36,13 @@ final class EditorAssets
         return is_file(self::distPath());
     }
 
+    /**
+     * URL of the module: `asset_url` if set, the CDN only with `asset` = "cdn",
+     * otherwise the published file (there is no automatic CDN fallback).
+     *
+     * @throws MissingEditorAssetException when the file is not published and `app.debug` is on
+     *                                     (without debug the error is reported and the URL returned)
+     */
     public function url(): string
     {
         $explicit = $this->config->get('php-script-editor.asset_url');
@@ -44,22 +51,34 @@ final class EditorAssets
             return $explicit;
         }
 
-        $mode = $this->config->get('php-script-editor.asset', 'auto');
-
-        if ($mode === 'cdn') {
+        if ($this->usesCdn()) {
             return $this->cdnUrl();
         }
 
         $published = $this->publishedPath();
         $file = public_path($published);
 
-        if ($mode === 'published' || is_file($file)) {
-            $version = is_file($file) ? '?v='.substr(md5((string) filemtime($file).filesize($file)), 0, 8) : '';
+        if (! is_file($file)) {
+            $exception = MissingEditorAssetException::forPath($file);
 
-            return asset($published).$version;
+            if ($this->config->get('app.debug')) {
+                throw $exception;
+            }
+
+            report($exception);
+
+            return asset($published);
         }
 
-        return $this->cdnUrl();
+        return asset($published).'?v='.substr(md5((string) filemtime($file).filesize($file)), 0, 8);
+    }
+
+    /**
+     * Only when configured explicitly: `'asset' => 'cdn'` (PHP_SCRIPT_EDITOR_ASSET=cdn).
+     */
+    public function usesCdn(): bool
+    {
+        return $this->config->get('php-script-editor.asset') === 'cdn';
     }
 
     public function cdnUrl(): string

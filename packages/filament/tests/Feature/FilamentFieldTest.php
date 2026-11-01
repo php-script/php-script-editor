@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use Livewire\Livewire;
 use PhpScript\Editor\Laravel\EditorConfig;
-use PhpScript\Editor\Laravel\Filament\PhpScriptEditor;
-use PhpScript\Editor\Laravel\Tests\Fixtures\ScriptForm;
+use PhpScript\Editor\Filament\PhpScriptEditor;
+use PhpScript\Editor\Filament\Tests\Fixtures\ScriptForm;
 
 afterEach(function (): void {
     ScriptForm::$configure = null;
@@ -34,6 +34,7 @@ it('does not inline a config when a config url is set', function (): void {
 });
 
 it('renders the editor bound to the Livewire state', function (): void {
+    config(['php-script-editor.asset' => 'cdn']);
     ScriptForm::$configure = fn (PhpScriptEditor $field) => $field->height('24rem')->lintUrl('/lint');
 
     $html = Livewire::test(ScriptForm::class)->html();

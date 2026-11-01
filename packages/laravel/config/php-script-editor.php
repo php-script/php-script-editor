@@ -11,16 +11,17 @@ return [
     |
     | Where the <php-script-editor> ES module is loaded from.
     |
-    | "auto"      use the published file (php artisan vendor:publish
-    |             --tag=php-script-editor-assets) when it exists, the CDN otherwise
-    | "published" always use the published file in public/vendor/php-script-editor
-    | "cdn"       always use the CDN url below
+    | "published" the file published to public/vendor/php-script-editor
+    |             (php artisan vendor:publish --tag=php-script-editor-assets).
+    |             When it is missing, an exception tells you so (with app.debug,
+    |             otherwise it is reported): there is no silent CDN fallback.
+    | "cdn"       opt in: load it from the CDN url below.
     |
     | "asset_url" overrides everything, e.g. a file built by your own Vite setup.
     |
     */
 
-    'asset' => env('PHP_SCRIPT_EDITOR_ASSET', 'auto'),
+    'asset' => env('PHP_SCRIPT_EDITOR_ASSET', 'published'),
 
     'asset_url' => env('PHP_SCRIPT_EDITOR_ASSET_URL'),
 

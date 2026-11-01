@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace PhpScript\Editor\Laravel;
 
-use Filament\Support\Facades\FilamentAsset;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
-use PhpScript\Editor\Laravel\Filament\FilamentIntegration;
 use PhpScript\Editor\Laravel\View\Components\PhpScriptEditor;
 
 final class PhpScriptEditorServiceProvider extends ServiceProvider
@@ -42,11 +40,6 @@ final class PhpScriptEditorServiceProvider extends ServiceProvider
                     EditorAssets::distPath() => public_path($this->app->make(EditorAssets::class)->publishedPath()),
                 ], ['php-script-editor-assets', 'laravel-assets']);
             }
-        }
-
-        // Filament is optional: nothing in the Filament namespace is loaded without it.
-        if (class_exists(FilamentAsset::class)) {
-            FilamentIntegration::register();
         }
     }
 }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhpScript\Editor\Laravel\Filament;
+namespace PhpScript\Editor\Filament;
 
 use Closure;
 use Filament\Forms\Components\Concerns\CanBeReadOnly;
@@ -27,7 +27,7 @@ class PhpScriptEditor extends Field
 {
     use CanBeReadOnly;
 
-    protected string $view = 'php-script-editor::filament.php-script-editor';
+    protected string $view = 'php-script-editor-filament::php-script-editor';
 
     protected Engine|Closure|null $engine = null;
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PhpScript\Editor\Laravel\View\Components;
 
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\HtmlString;
 use Illuminate\View\Component;
 use PhpScript\Core\Engine;
@@ -86,6 +87,25 @@ final class PhpScriptEditor extends Component
             ),
             'style' => ElementAttributes::style(is_string($height) || is_int($height) ? $height : null, $style),
         ]);
+    }
+
+    /**
+     * `:persisted="false"` with a value: the boolean `persisted` attribute cannot say "false" (the
+     * element treats a missing attribute as "persisted when the value is not empty" and would PUT
+     * a new script), so the property is set before the element upgrades.
+     */
+    public function notPersistedScript(): HtmlString
+    {
+        if ($this->persisted !== false || ($this->value ?? '') === '') {
+            return new HtmlString('');
+        }
+
+        $nonce = Vite::cspNonce();
+
+        return new HtmlString(sprintf(
+            '<script%s>document.currentScript.previousElementSibling.persisted = false;</script>',
+            $nonce ? ' nonce="'.e($nonce).'"' : '',
+        ));
     }
 
     public function scriptTag(): HtmlString

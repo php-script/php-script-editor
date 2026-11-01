@@ -17,6 +17,11 @@ function editorElement(string $html): Dom\Element
     return $element;
 }
 
+// The CDN is opt-in; these tests only check the rendered tag (AssetsTest covers the asset modes).
+beforeEach(function (): void {
+    config(['php-script-editor.asset' => 'cdn']);
+});
+
 it('renders the element with the script tag', function (): void {
     $html = Blade::render('<x-php-script-editor name="script" value="return 1;" />');
 
@@ -172,4 +177,15 @@ it('skips the script tag when disabled', function (): void {
 it('renders the scripts directive', function (): void {
     expect(Blade::render('@phpScriptEditorScripts'))
         ->toBe('<script type="module" src="'.EditorAssets::DEFAULT_CDN_URL.'" data-php-script-editor></script>');
+});
+
+it('keeps a new script with a value unpersisted (POST first)', function (): void {
+    $html = Blade::render('<x-php-script-editor value="return 1;" save-url="/scripts" :persisted="false" />');
+
+    expect($html)->toContain('</php-script-editor><script>document.currentScript.previousElementSibling.persisted = false;</script>')
+        ->and(editorElement($html)->hasAttribute('persisted'))->toBeFalse();
+
+    expect(Blade::render('<x-php-script-editor value="return 1;" />'))->not->toContain('persisted = false')
+        ->and(Blade::render('<x-php-script-editor value="" :persisted="false" />'))->not->toContain('persisted = false')
+        ->and(Blade::render('<x-php-script-editor value="return 1;" persisted />'))->not->toContain('persisted = false');
 });

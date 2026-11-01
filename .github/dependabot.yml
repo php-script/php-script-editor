@@ -24,7 +24,7 @@ updates:
         patterns: ['monaco-editor']
 
   - package-ecosystem: composer
-    directories: [/packages/laravel, /dev-server]
+    directories: [/packages/laravel, /packages/filament, /dev-server]
     schedule:
       interval: weekly
     groups:
