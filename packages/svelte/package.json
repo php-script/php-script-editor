@@ -1,0 +1,50 @@
+{
+  "name": "@php-script/editor-svelte",
+  "version": "2.0.0",
+  "description": "Svelte 5 wrapper for the <php-script-editor> web component (bind:value support).",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "svelte": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "svelte": "./dist/index.js",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "svelte-package -i src -o dist",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@php-script/editor": "workspace:^"
+  },
+  "peerDependencies": {
+    "monaco-editor": ">=0.55.0 <1.0.0",
+    "svelte": "^5.0.0"
+  },
+  "devDependencies": {
+    "@sveltejs/package": "^3.0.2",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "@testing-library/svelte": "^5.4.2",
+    "@vitest/browser-playwright": "^5.0.5",
+    "monaco-editor": "^0.57.0",
+    "svelte": "^5.57.3",
+    "svelte-check": "^4.4.0",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/php-script/php-script-editor.git",
+    "directory": "packages/svelte"
+  }
+}
