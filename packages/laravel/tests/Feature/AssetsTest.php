@@ -64,14 +64,14 @@ it('adds the CSP nonce to the script tag', function (): void {
     expect((string) app(EditorAssets::class)->scriptTag())->toContain(' nonce="abc&quot;123"');
 });
 
-it('publishes the config and the built module', function (): void {
+it('publishes the config and the built editor directory', function (): void {
     $config = ServiceProvider::pathsToPublish(PhpScriptEditorServiceProvider::class, 'php-script-editor-config');
     $assets = ServiceProvider::pathsToPublish(PhpScriptEditorServiceProvider::class, 'php-script-editor-assets');
 
     expect(array_values($config))->toBe([config_path('php-script-editor.php')]);
 
     if (EditorAssets::hasDist()) {
-        expect($assets)->toBe([EditorAssets::distPath() => public_path('vendor/php-script-editor/php-script-editor.js')]);
+        expect($assets)->toBe([EditorAssets::distDirectory() => public_path('vendor/php-script-editor')]);
     } else {
         expect($assets)->toBe([]);
     }

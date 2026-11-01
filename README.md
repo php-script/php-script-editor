@@ -13,7 +13,9 @@ with thin wrappers for React, Vue and Svelte and an integration package for Lara
   the OS), and an external theme set through CSS custom properties or a theme object.
 - **Works in forms.** The element is a form-associated custom element (`name`, reset, disabled).
 - **Ships two ways.** An ES module with `lit` and `monaco-editor` as peers for bundlers, and a
-  single-file standalone bundle for Blade, Alpine and Livewire, served from your own app.
+  standalone build for Blade, Alpine and Livewire, served from your own app.
+- **Loads Monaco lazily.** The element is small; Monaco is imported when the first editor connects,
+  and its worker is a separate file.
 
 | Package                                           | For                                            |
 | ------------------------------------------------- | ---------------------------------------------- |
@@ -65,9 +67,10 @@ pnpm add @php-script/editor monaco-editor
 ```
 
 You can give the initial content as `value`, as a `<script type="text/php-script">` child or as a
-`<template>` child. Indentation from the surrounding HTML is removed. Without a bundler, copy
-`dist/standalone/php-script-editor.js` into your app and load it from there. It includes Monaco,
-Lit and the CSS. Serve it yourself rather than from a public CDN; the Laravel package publishes it
+`<template>` child. Indentation from the surrounding HTML is removed. Without a bundler, copy the
+`dist/standalone/` directory into your app and load `php-script-editor.js` from there. It includes
+Lit and the CSS and loads Monaco from `chunks/` and the worker from `assets/` next to it. The chunk
+names are content-hashed, so they can be cached forever. Serve it yourself rather than from a public CDN; the Laravel package publishes it
 for you and only uses a CDN when you configure one explicitly.
 
 ## Element API
@@ -105,7 +108,9 @@ for you and only uses a CDN when you configure one explicitly.
 | `whenReady()`          | Resolves to the Monaco editor.                                                  |
 | `focus()`              | Focuses the editor.                                                             |
 
-The Monaco instance is available as `editor`.
+The Monaco editor instance is available as `editor`, the Monaco API as `monaco` (`null` until the
+first editor has mounted). Outside an element, `await loadMonaco()` from `@php-script/editor`
+returns the same API and starts loading it.
 
 **Events** (bubbling `CustomEvent`s):
 

@@ -80,10 +80,9 @@ until [ -f "$DIST" ]; do
   sleep 5
 done
 
-# packages/editor dist -> packages/laravel/resources/dist -> public/vendor and public/js/php-script.
+# packages/editor dist -> packages/laravel/resources/dist -> public/vendor/php-script-editor.
 php /app/packages/laravel/bin/build-asset.php
 php artisan vendor:publish --tag=php-script-editor-assets --force --ansi
-php artisan filament:assets --ansi
 php artisan optimize:clear --ansi >/dev/null
 # The seeder is idempotent (updateOrCreate / firstOrCreate): data survives restarts.
 php artisan migrate --seed --force --ansi

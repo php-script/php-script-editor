@@ -24,19 +24,21 @@ php artisan vendor:publish --tag=php-script-editor-config
 
 ### The editor script
 
-The editor is a single ES module (Monaco, Lit and CSS bundled, about 3.4 MB, about 900 KB gzipped).
-By default (`'asset' => 'published'`) it is served from your app. Publish it:
+The editor is a small ES module (Lit and CSS bundled, about 15 KB brotli) that imports Monaco
+(`chunks/monaco-<hash>.js`, about 830 KB brotli) once an editor connects, plus a separate worker
+(`assets/editor.worker-<hash>.js`). Chunk names are content-hashed, so they can be cached forever.
+By default (`'asset' => 'published'`) the directory is served from your app. Publish it:
 
 ```bash
 php artisan vendor:publish --tag=php-script-editor-assets --force
-# -> public/vendor/php-script-editor/php-script-editor.js
+# -> public/vendor/php-script-editor/{php-script-editor.js,chunks/,assets/}
 ```
 
 There is no silent CDN fallback. If the file is missing, rendering throws a `MissingEditorAssetException`
 with the publish command when `APP_DEBUG` is on; with debug off the exception is reported and the (broken)
 published URL is used. Loading from jsDelivr is opt-in: `PHP_SCRIPT_EDITOR_ASSET=cdn` (or `'asset' => 'cdn'`).
 
-The file is also published with Laravel's `laravel-assets` tag, so the usual
+The directory is also published with Laravel's `laravel-assets` tag, so the usual
 `"post-update-cmd": ["@php artisan vendor:publish --tag=laravel-assets --ansi --force"]` keeps it up to date.
 
 | `config/php-script-editor.php` |                                                                                                     |
@@ -271,7 +273,7 @@ This package lives in the `packages/laravel` directory of the php-script-editor 
 
 ```bash
 composer install
-composer build-asset            # copies packages/editor/dist/standalone/php-script-editor.js to resources/dist/
+composer build-asset            # copies packages/editor/dist/standalone/ (without maps) to resources/dist/
 php bin/build-asset.php --build # builds the editor first (pnpm --filter @php-script/editor build)
 composer test
 ```
@@ -280,15 +282,16 @@ Or by hand from the monorepo root:
 
 ```bash
 pnpm --filter @php-script/editor build
-cp packages/editor/dist/standalone/php-script-editor.js packages/laravel/resources/dist/
+php packages/laravel/bin/build-asset.php
 ```
 
-`resources/dist/` is git-ignored: the built module has to be added in the release step. Without it the
+`resources/dist/` is git-ignored here. The split workflow builds the editor and commits it into the split
+repository, so Packagist installs ship it. Without it the
 `php-script-editor-assets` publish tag is not offered; use `PHP_SCRIPT_EDITOR_ASSET=cdn` or `asset_url`.
 
 Packagist needs the package at the root of a repository: releases are published through a subtree split of
 `packages/laravel` into a separate repository (e.g. `php-script/editor-laravel`) that also contains the built
-`resources/dist/php-script-editor.js`.
+`resources/dist/`.
 
 ## License
 

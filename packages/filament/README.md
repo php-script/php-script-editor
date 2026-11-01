@@ -10,16 +10,15 @@ Requirements: PHP 8.4+, Laravel 12 or 13, Filament ^5.0, php-script ^2.0.
 
 ```bash
 composer require php-script/editor-filament
-php artisan filament:assets   # -> public/js/php-script/editor-filament/php-script-editor.js
+php artisan vendor:publish --tag=php-script-editor-assets --force   # -> public/vendor/php-script-editor/
 ```
 
-The service provider is auto-discovered. The editor module is registered as a Filament asset that is only
-loaded on pages that show the field (`loadedOnRequest()`), so keep `filament:assets` in your deploy (Filament's
-`filament:upgrade` in `post-autoload-dump` runs it).
-
-If `filament:assets` has not run, the field uses the file published by `php-script/editor-laravel`
-(`php artisan vendor:publish --tag=php-script-editor-assets --force`). If neither exists it fails loudly with a
-`MissingEditorAssetException` in debug mode. The CDN is only used when configured explicitly
+The service provider is auto-discovered. The field loads the editor published by `php-script/editor-laravel`
+with a dynamic `import()` the first time it is shown, so other panel pages don't pay for it. It is not a
+Filament asset: `filament:assets` copies single files, but the editor loads its Monaco chunk and worker
+relative to the entry. The `laravel-assets` tag also publishes it, so add
+`@php artisan vendor:publish --tag=laravel-assets --ansi --force` to `post-update-cmd`. If the files are
+missing it fails loudly with a `MissingEditorAssetException` in debug mode. The CDN is only used when configured explicitly
 (`PHP_SCRIPT_EDITOR_ASSET=cdn`), and `php-script-editor.asset_url` wins over everything.
 
 ## Usage

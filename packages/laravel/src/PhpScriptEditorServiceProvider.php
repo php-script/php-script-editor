@@ -34,10 +34,11 @@ final class PhpScriptEditorServiceProvider extends ServiceProvider
                 __DIR__.'/../resources/views' => resource_path('views/vendor/php-script-editor'),
             ], 'php-script-editor-views');
 
-            // Only offered when the built module is present (see README "Development").
+            // Only offered when the built editor is present (see README "Development"). The whole
+            // directory is published, because the entry loads its Monaco chunks relative to itself.
             if (EditorAssets::hasDist()) {
                 $this->publishes([
-                    EditorAssets::distPath() => public_path($this->app->make(EditorAssets::class)->publishedPath()),
+                    EditorAssets::distDirectory() => public_path($this->app->make(EditorAssets::class)->publishedDirectory()),
                 ], ['php-script-editor-assets', 'laravel-assets']);
             }
         }

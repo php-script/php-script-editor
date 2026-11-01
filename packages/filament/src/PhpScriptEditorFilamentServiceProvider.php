@@ -17,7 +17,5 @@ final class PhpScriptEditorFilamentServiceProvider extends ServiceProvider
                 __DIR__.'/../resources/views' => resource_path('views/vendor/php-script-editor-filament'),
             ], 'php-script-editor-filament-views');
         }
-
-        FilamentIntegration::register();
     }
 }

@@ -24,11 +24,20 @@ final class EditorAssets
     public function __construct(private readonly Repository $config) {}
 
     /**
-     * The built module shipped inside this package (created by `composer build-asset`).
+     * The built editor shipped inside this package (created by `composer build-asset`): the entry
+     * module plus the hashed Monaco and worker chunks it loads on demand.
+     */
+    public static function distDirectory(): string
+    {
+        return dirname(__DIR__).'/resources/dist';
+    }
+
+    /**
+     * The entry module inside distDirectory().
      */
     public static function distPath(): string
     {
-        return dirname(__DIR__).'/resources/dist/php-script-editor.js';
+        return self::distDirectory().'/php-script-editor.js';
     }
 
     public static function hasDist(): bool
@@ -93,6 +102,14 @@ final class EditorAssets
         $path = $this->config->get('php-script-editor.published_path');
 
         return is_string($path) && $path !== '' ? ltrim($path, '/') : 'vendor/php-script-editor/php-script-editor.js';
+    }
+
+    /**
+     * Public directory that receives distDirectory(): the entry and its chunks stay side by side.
+     */
+    public function publishedDirectory(): string
+    {
+        return dirname($this->publishedPath());
     }
 
     public function scriptTag(): HtmlString

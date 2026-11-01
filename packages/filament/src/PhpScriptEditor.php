@@ -9,6 +9,7 @@ use Filament\Forms\Components\Concerns\CanBeReadOnly;
 use Filament\Forms\Components\Field;
 use Illuminate\Support\HtmlString;
 use PhpScript\Core\Engine;
+use PhpScript\Editor\Laravel\EditorAssets;
 use PhpScript\Editor\Laravel\EditorConfig;
 use PhpScript\Editor\Laravel\Rules\ValidPhpScript;
 use PhpScript\Editor\Laravel\Support\ElementAttributes;
@@ -223,9 +224,13 @@ class PhpScriptEditor extends Field
         return (array) $this->evaluate($this->labels);
     }
 
+    /**
+     * The module published by php-script/editor-laravel. Not a Filament asset: `filament:assets`
+     * copies single files, but the editor loads its Monaco chunks relative to the entry.
+     */
     public function getScriptSrc(): string
     {
-        return FilamentIntegration::scriptSrc();
+        return app(EditorAssets::class)->url();
     }
 
     /**
