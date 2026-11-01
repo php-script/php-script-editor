@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content="playground-token" />
+    <title>Vanilla – php-script editor</title>
+  </head>
+  <body>
+    <main>
+      <section class="card">
+        <h2>New script (POST, then PUT)</h2>
+        <php-script-editor
+          data-testid="editor"
+          config-url="/api/config"
+          save-url="/api/scripts"
+          lint-url="/api/lint"
+        ></php-script-editor>
+        <p><button type="button" data-testid="run">Run</button></p>
+        <pre data-testid="log"></pre>
+      </section>
+      <section class="card">
+        <h2>Form field (name="script")</h2>
+        <form data-testid="form">
+          <php-script-editor
+            name="script"
+            config-url="/api/config"
+            style="--php-script-editor-height: 8rem"
+          >
+            <script type="text/php-script">
+              echo user.name;
+            </script>
+          </php-script-editor>
+          <button type="submit">Submit form</button>
+        </form>
+        <pre data-testid="form-output"></pre>
+      </section>
+    </main>
+    <script type="module" src="/src/vanilla.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@4.0.1/schema.json",
+  "changelog": ["@changesets/changelog-github", { "repo": "php-script/php-script-editor" }],
+  "commit": false,
+  "fixed": [
+    [
+      "@php-script/editor",
+      "@php-script/editor-react",
+      "@php-script/editor-vue",
+      "@php-script/editor-svelte"
+    ]
+  ],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": ["playground"]
+}

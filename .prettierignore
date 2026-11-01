@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+pnpm-lock.yaml
+playwright-report/
+test-results/
+packages/laravel/vendor/
+packages/laravel/resources/dist/
+dev-server/vendor/
+dev-server/storage/
+.specify/
+.claude/
+*.min.js
+.svelte-kit/
+examples/
+**/composer.json

@@ -1,0 +1,71 @@
+name: Split composer packages
+
+# Mirrors the composer packages into read-only repositories for Packagist.
+# A push to main updates dev-main. release.yml calls this with a version after publishing,
+# because tags created with GITHUB_TOKEN do not trigger other workflows.
+on:
+  push:
+    branches: [main]
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: true
+    secrets:
+      SPLIT_TOKEN:
+        required: true
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to tag in the split repositories, e.g. 0.1.1 (empty = branch only)
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - { directory: packages/laravel, repository: editor-laravel, asset: true }
+          - { directory: packages/filament, repository: editor-filament }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # The Laravel package ships the built editor. It is git-ignored in the monorepo, so build it
+      # here and drop the ignore rule in this workspace only; the split action copies the directory.
+      - if: matrix.package.asset
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - if: matrix.package.asset
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - if: matrix.package.asset
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter @php-script/editor build
+          php packages/laravel/bin/build-asset.php
+          sed -i '\#^/resources/dist/$#d' packages/laravel/.gitignore
+          test -f packages/laravel/resources/dist/php-script-editor.js
+      - id: version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: echo "tag=${VERSION:+v$VERSION}" >> "$GITHUB_OUTPUT"
+      - uses: danharrin/monorepo-split-github-action@14e42e2437f674b8987c1f50ca3689116aea1893 # v2.4.5
+        env:
+          GITHUB_TOKEN: ${{ secrets.SPLIT_TOKEN }}
+        with:
+          tag: ${{ steps.version.outputs.tag }}
+          branch: main
+          package_directory: ${{ matrix.package.directory }}
+          repository_organization: php-script
+          repository_name: ${{ matrix.package.repository }}
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com

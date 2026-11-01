@@ -1,0 +1,51 @@
+{
+  "name": "@php-script/editor-vue",
+  "version": "0.1.0",
+  "description": "Vue 3 wrapper for the <php-script-editor> web component (v-model support).",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vue-tsc -p tsconfig.build.json",
+    "typecheck": "vue-tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@php-script/editor": "workspace:^"
+  },
+  "peerDependencies": {
+    "monaco-editor": ">=0.55.0 <1.0.0",
+    "vue": "^3.4.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.10",
+    "@vitest/browser-playwright": "^5.0.5",
+    "@vue/test-utils": "^2.5.1",
+    "monaco-editor": "^0.57.0",
+    "typescript": "~6.0.3",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5",
+    "vue": "^3.5.44",
+    "vue-tsc": "^3.3.14"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/php-script/php-script-editor.git",
+    "directory": "packages/vue"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

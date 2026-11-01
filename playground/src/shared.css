@@ -1,0 +1,63 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f6f7f9;
+  --fg: #1f2328;
+  --card: #fff;
+  --muted: #59636e;
+  --line: #d1d9e0;
+  font-family: system-ui, sans-serif;
+}
+:root.dark {
+  --bg: #0d1117;
+  --fg: #e6edf3;
+  --card: #161b22;
+  --muted: #9198a1;
+  --line: #30363d;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+}
+header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+}
+header nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-right: auto;
+}
+header a {
+  color: inherit;
+}
+header a[aria-current] {
+  font-weight: 700;
+}
+main {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+pre {
+  white-space: pre-wrap;
+  font-size: 12px;
+  color: var(--muted);
+}
+button {
+  font: inherit;
+}

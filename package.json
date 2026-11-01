@@ -1,0 +1,38 @@
+{
+  "name": "php-script-editor-monorepo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.16.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "build": "pnpm --filter \"./packages/**\" -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write .",
+    "test": "pnpm -r --if-present test",
+    "test:e2e": "pnpm --filter playground test:e2e",
+    "dev": "pnpm --filter playground dev",
+    "ci": "pnpm build && pnpm typecheck && pnpm lint && pnpm test",
+    "changeset": "changeset",
+    "version-packages": "changeset version && pnpm install --lockfile-only",
+    "release": "pnpm build && changeset publish"
+  },
+  "devDependencies": {
+    "@changesets/changelog-github": "^1.0.1",
+    "@changesets/cli": "^3.0.3",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.14.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-svelte": "^3.23.1",
+    "eslint-plugin-vue": "^10.12.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "prettier-plugin-svelte": "^4.1.1",
+    "svelte-eslint-parser": "^1.10.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vue-eslint-parser": "^10.4.1"
+  }
+}

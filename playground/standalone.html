@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content="playground-token" />
+    <title>Standalone – php-script editor</title>
+    <style>
+      /* Filament v5 / Tailwind 4 style tokens in oklch, mapped onto the editor. */
+      :root {
+        --primary-600: oklch(0.546 0.245 262.881);
+        --gray-950: oklch(0.13 0.028 261.692);
+        --gray-900: oklch(0.21 0.034 264.665);
+        --gray-200: oklch(0.928 0.006 264.531);
+      }
+      php-script-editor.filament {
+        --php-script-editor-accent: var(--primary-600);
+        --php-script-editor-border: var(--gray-200);
+        --php-script-editor-radius: 0.75rem;
+      }
+      :root.dark php-script-editor.filament {
+        --php-script-editor-background: var(--gray-950);
+        --php-script-editor-widget-background: var(--gray-900);
+        --php-script-editor-border: var(--gray-900);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="card">
+        <h2>
+          Prebuilt bundle via &lt;script type="module"&gt; (Blade, Filament, Alpine, Livewire)
+        </h2>
+        <p>
+          Uses <code>dist/standalone/php-script-editor.js</code> and the Filament colour tokens
+          above.
+        </p>
+        <php-script-editor
+          class="filament"
+          data-testid="editor"
+          config-url="/api/config"
+          save-url="/api/scripts"
+          theme="auto"
+          labels='{"save":"Speichern","saved":"Gespeichert","dirty":"Ungespeichert","saving":"Speichert…"}'
+        >
+          <script type="text/php-script">
+            echo user.address.city;
+          </script>
+        </php-script-editor>
+      </section>
+      <section class="card">
+        <h2>Alpine-style binding via native input event</h2>
+        <php-script-editor
+          data-testid="bound"
+          config-url="/api/config"
+          style="--php-script-editor-height: 6rem"
+        ></php-script-editor>
+        <pre data-testid="bound-value"></pre>
+      </section>
+    </main>
+    <script type="module">
+      import { renderChrome } from '/src/chrome.ts';
+      renderChrome('standalone');
+    </script>
+    <script type="module" src="/standalone/php-script-editor.js"></script>
+    <script type="module">
+      const el = document.querySelector('[data-testid=bound]');
+      const out = document.querySelector('[data-testid=bound-value]');
+      el.addEventListener('input', (e) => (out.textContent = e.target.value));
+    </script>
+  </body>
+</html>
