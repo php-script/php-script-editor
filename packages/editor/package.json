@@ -62,5 +62,9 @@
     "type": "git",
     "url": "git+https://github.com/php-script/php-script-editor.git",
     "directory": "packages/editor"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }

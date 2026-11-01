@@ -43,5 +43,9 @@
     "type": "git",
     "url": "git+https://github.com/php-script/php-script-editor.git",
     "directory": "packages/vue"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }
