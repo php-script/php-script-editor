@@ -1,0 +1,42 @@
+name: Split composer packages
+
+# Mirrors the composer packages into read-only repositories for Packagist.
+# main updates dev-main; a release tag "@php-script/editor@X.Y.Z" becomes "vX.Y.Z".
+on:
+  push:
+    branches: [main]
+    tags: ['@php-script/editor@*']
+
+permissions:
+  contents: read
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - { directory: packages/laravel, repository: editor-laravel }
+          - { directory: packages/filament, repository: editor-filament }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: version
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: echo "tag=v${REF_NAME##*@}" >> "$GITHUB_OUTPUT"
+      - uses: danharrin/monorepo-split-github-action@14e42e2437f674b8987c1f50ca3689116aea1893 # v2.4.5
+        env:
+          GITHUB_TOKEN: ${{ secrets.SPLIT_TOKEN }}
+        with:
+          tag: ${{ steps.version.outputs.tag }}
+          branch: main
+          package_directory: ${{ matrix.package.directory }}
+          repository_organization: php-script
+          repository_name: ${{ matrix.package.repository }}
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
