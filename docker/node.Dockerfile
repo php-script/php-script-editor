@@ -1,6 +1,6 @@
 # Node + pnpm + Playwright browsers (Chromium, Firefox, WebKit).
 # Keep the tag in sync with @playwright/test in playground/package.json.
-FROM mcr.microsoft.com/playwright:v1.64.1-noble
+FROM mcr.microsoft.com/playwright:v1.65.0-noble
 
 RUN npm install -g pnpm@12.16.1
 
