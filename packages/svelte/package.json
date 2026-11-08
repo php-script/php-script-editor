@@ -34,13 +34,13 @@
     "@sveltejs/package": "^3.0.2",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@testing-library/svelte": "^5.4.2",
-    "@vitest/browser-playwright": "^5.0.5",
+    "@vitest/browser-playwright": "^5.1.0",
     "monaco-editor": "^0.57.0",
     "svelte": "^5.57.3",
     "svelte-check": "^4.4.0",
     "typescript": "~6.0.3",
     "vite": "^8.3.5",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.0"
   },
   "repository": {
     "type": "git",
