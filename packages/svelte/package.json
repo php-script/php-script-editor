@@ -37,9 +37,9 @@
     "@vitest/browser-playwright": "^5.0.5",
     "monaco-editor": "^0.57.0",
     "svelte": "^5.57.3",
-    "svelte-check": "^4.4.0",
+    "svelte-check": "^4.7.8",
     "typescript": "~6.0.3",
-    "vite": "^8.3.5",
+    "vite": "^8.3.6",
     "vitest": "^5.0.5"
   },
   "repository": {
